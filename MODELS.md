@@ -42,12 +42,14 @@ stool                               ← radice, mesh: "39020_TUBO_A_AF1" (base f
 
 | Node name | Mesh name nel GLB | Three.js `object.name` | Chiave nel codice |
 |-----------|-------------------|------------------------|-------------------|
-| `Cube.005` | `Cube.002` | `"Cube.005"` | `'cube.005'` (lowercase) |
-| `Cube.006` | `Cube.005` | `"Cube.006"` | `'cube.006'` (lowercase) |
+| `Cube.005` | `Cube.002` | `"Cube005"` (punti rimossi) | `'cube005'` |
+| `Cube.006` | `Cube.005` | `"Cube006"` (punti rimossi) | `'cube006'` |
+
+Three.js GLTFLoader rimuove i punti dai nomi degli oggetti (`"Cube.005"` → `"Cube005"`).
 
 Riconoscimento in `Scene.tsx`:
 ```ts
-const UPHOLSTERY_MESH_NAMES = new Set(['cube.005', 'cube.006'])
+const UPHOLSTERY_MESH_NAMES = new Set(['cube005', 'cube006'])
 function isUpholsteryMesh(name: string) {
   return UPHOLSTERY_MESH_NAMES.has(name.toLowerCase())
 }

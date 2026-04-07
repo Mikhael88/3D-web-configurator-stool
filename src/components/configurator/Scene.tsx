@@ -12,9 +12,9 @@ const MODEL_PATH = '/stool.glb'
 // Mesh targets
 // ──────────────────────────────────────
 
-// Seduta = node "Cube.005", Schienale = node "Cube.006"
-// Three.js usa il nome del NODE (non del mesh). I punti vengono preservati.
-const UPHOLSTERY_MESH_NAMES = new Set(['cube.005', 'cube.006'])
+// Seduta = node "Cube.005" → Three.js strips dots → "Cube005"
+// Schienale = node "Cube.006" → "Cube006"
+const UPHOLSTERY_MESH_NAMES = new Set(['cube005', 'cube006'])
 
 function isUpholsteryMesh(name: string): boolean {
   return UPHOLSTERY_MESH_NAMES.has(name.toLowerCase())
