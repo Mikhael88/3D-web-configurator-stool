@@ -3,7 +3,6 @@
 import { useRef, useEffect, useMemo, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, Environment, ContactShadows, OrbitControls } from '@react-three/drei'
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { useConfiguratorStore, UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
 
@@ -13,10 +12,9 @@ const MODEL_PATH = '/stool.glb'
 // Mesh targets
 // ──────────────────────────────────────
 
-// Seduta = mesh "Cube.002" (node Cube.005), Schienale = mesh "Cube.005" (node Cube.006)
-// Nomi verificati direttamente dal GLB (Three.js usa il nome del mesh, non del node)
-// Three.js rimuove i punti dai nomi: "Cube.005" → "Cube005", "Cube.006" → "Cube006"
-const UPHOLSTERY_MESH_NAMES = new Set(['cube005', 'cube006'])
+// Seduta = node "Cube.005", Schienale = node "Cube.006"
+// Three.js usa il nome del NODE (non del mesh). I punti vengono preservati.
+const UPHOLSTERY_MESH_NAMES = new Set(['cube.005', 'cube.006'])
 
 function isUpholsteryMesh(name: string): boolean {
   return UPHOLSTERY_MESH_NAMES.has(name.toLowerCase())
@@ -122,7 +120,6 @@ let stoolCurrentRotation = 0
 
 function StoolInteraction() {
   const { gl, camera } = useThree()
-  const controlsRef = useRef<OrbitControlsImpl>(null!)
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
 
   useEffect(() => {
@@ -194,7 +191,6 @@ function StoolInteraction() {
 
   return (
     <OrbitControls
-      ref={controlsRef}
       makeDefault
       enableDamping
       dampingFactor={0.05}
@@ -245,14 +241,6 @@ function StoolModel() {
       }
     })
 
-    // Log all mesh names to console for debugging
-    console.log('[CONFIGURATOR] All objects in GLB:')
-    scene.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh || child.type === 'Group') {
-        console.log(`  "${child.name}" (${child.type})`)
-      }
-    })
-
     return () => {
       setStoolScene(null)
       setRotatingBody(null)
@@ -261,14 +249,9 @@ function StoolModel() {
 
   // Apply material and visibility
   useEffect(() => {
-    console.log('[MAT] useEffect fired, upholsteryId=', upholsteryId)
-    let found = 0
     scene.traverse((child) => {
       const mesh = child as THREE.Mesh
       if (!mesh.isMesh) return
-
-      // Log every mesh name so we can see what Three.js actually has
-      console.log('[MAT] mesh.name=', JSON.stringify(mesh.name), 'isUpholstery=', isUpholsteryMesh(mesh.name))
 
       // Armrest visibility
       if (isArmrest(mesh.name) || isArmrest(mesh.parent?.name || '')) {
@@ -278,8 +261,6 @@ function StoolModel() {
 
       // Upholstery meshes
       if (isUpholsteryMesh(mesh.name)) {
-        found++
-        console.log('[MAT] ✅ APPLYING to', mesh.name)
         if (Array.isArray(mesh.material)) {
           mesh.material = mesh.material.map(() => upholsteryMat)
         } else {
@@ -293,8 +274,7 @@ function StoolModel() {
         })
       }
     })
-    console.log('[MAT] Total upholstery meshes found and updated:', found)
-  }, [scene, upholsteryMat, showArmrests, upholsteryId])
+  }, [scene, upholsteryMat, showArmrests])
 
   return <primitive object={scene} />
 }

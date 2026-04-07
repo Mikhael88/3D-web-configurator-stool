@@ -1,4 +1,3 @@
-import { Texture } from 'three'
 import { create } from 'zustand'
 
 export type MaterialCategory = 'fabric' | 'leather'
