@@ -7,16 +7,18 @@ export const THEME = {
   bgInput:     '#f9f8f6',
 
   // Text
-  textPrimary:   '#2c3e50',
+  textPrimary:   '#2c3e50',  // intentional alias of accentNavy — split if text/accent diverge
   textSecondary: 'rgba(44,62,80,0.65)',
   textMuted:     'rgba(44,62,80,0.35)',
   textInverse:   '#ffffff',
 
   // Accents
-  accentNavy:    '#2c3e50',
+  accentNavy:    '#2c3e50',  // intentional alias of textPrimary — split if text/accent diverge
   accentSand:    '#c9b99a',
   accentSlate:   '#7a9bb5',
-  accentSelected: 'rgba(44,62,80,0.15)',
+
+  // States
+  accentSelected: 'rgba(44,62,80,0.15)',  // swatch ring / selection tint — same value as borderMid, split if they diverge
 
   // Borders
   borderSubtle: 'rgba(44,62,80,0.08)',
