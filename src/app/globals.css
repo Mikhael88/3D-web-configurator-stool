@@ -1,7 +1,27 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* ── Configurator Custom Styles ── */
+/* ── Design Tokens ── */
+:root {
+  --bg-page:      #f5f2ee;
+  --bg-sidebar:   #ffffff;
+  --bg-card:      #ffffff;
+  --bg-input:     #f9f8f6;
+  --text-primary:   #2c3e50;
+  --text-secondary: rgba(44,62,80,0.65);
+  --text-muted:     rgba(44,62,80,0.35);
+  --text-inverse:   #ffffff;
+  --accent-navy:    #2c3e50;
+  --accent-sand:    #c9b99a;
+  --accent-slate:   #7a9bb5;
+  --border-subtle:  rgba(44,62,80,0.08);
+  --border-mid:     rgba(44,62,80,0.15);
+  --border-strong:  rgba(44,62,80,0.25);
+  --shadow-sheet: 0 -4px 24px rgba(0,0,0,0.08);
+  --shadow-tray:  0 -8px 32px rgba(0,0,0,0.12);
+}
+
+/* ── Base ── */
 * {
   box-sizing: border-box;
 }
@@ -10,8 +30,8 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Manrope', sans-serif;
-  background-color: #0c0e12;
-  color: #e2e2e8;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -35,7 +55,7 @@ body {
 }
 
 .config-sidebar::-webkit-scrollbar-thumb {
-  background: #45464d;
+  background: var(--border-mid);
   border-radius: 1px;
 }
 
@@ -51,6 +71,6 @@ canvas:active {
 
 /* Selection color */
 ::selection {
-  background: rgba(188, 199, 222, 0.3);
-  color: #e2e2e8;
+  background: rgba(44, 62, 80, 0.15);
+  color: var(--text-primary);
 }
