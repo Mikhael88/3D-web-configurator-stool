@@ -1,137 +1,152 @@
 'use client'
 
-import { Suspense } from 'react'
-import dynamic from 'next/dynamic'
-import { useConfiguratorStore } from '@/stores/configurator-store'
-import ConfigSidebar from '@/components/configurator/ConfigSidebar'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { MODELS, type ModelConfig } from '@/models'
+import { THEME } from '@/lib/theme'
 
-// Dynamic import for the 3D scene to avoid SSR issues
-const ConfiguratorScene = dynamic(
-  () => import('@/components/configurator/Scene'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#0a0a0f' }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#bcc7de', borderTopColor: 'transparent' }} />
-          <span className="text-xs uppercase tracking-[0.3em]" style={{ color: '#909097' }}>Loading 3D Scene</span>
-        </div>
-      </div>
-    ),
+function ProductCard({ model }: { model: ModelConfig }) {
+  const router = useRouter()
+  const [showCS, setShowCS] = useState(false)
+  const isReady = model.glbPath !== null
+
+  const handleClick = () => {
+    if (!isReady) { setShowCS(true); return }
+    router.push(`/configure/${model.id}`)
   }
-)
 
-function LoadingScreen() {
   return (
-    <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: '#0c0e12' }}>
-      <div className="flex flex-col items-center gap-6">
+    <div
+      onClick={handleClick}
+      onMouseEnter={() => { if (!isReady) setShowCS(true) }}
+      onMouseLeave={() => setShowCS(false)}
+      className="relative flex flex-col overflow-hidden transition-all duration-300"
+      style={{
+        background: THEME.bgCard,
+        border: `1px solid ${isReady ? THEME.borderSubtle : 'rgba(44,62,80,0.04)'}`,
+        cursor: isReady ? 'pointer' : 'default',
+        opacity: isReady ? 1 : 0.45,
+      }}
+    >
+      {/* Image area */}
+      <div
+        className="flex-1 relative flex items-center justify-center overflow-hidden"
+        style={{ background: THEME.bgCardImage, minHeight: '160px' }}
+      >
+        <div style={{ opacity: 0.2 }}>
+          <svg width="56" height="80" viewBox="0 0 56 80" fill="none">
+            <rect x="10" y="6" width="36" height="14" rx="2" fill={THEME.accentNavy}/>
+            <rect x="22" y="20" width="12" height="38" rx="1" fill={THEME.accentSlate}/>
+            <ellipse cx="28" cy="62" rx="20" ry="5" fill={THEME.accentSand}/>
+            <rect x="8" y="66" width="40" height="6" rx="1" fill={THEME.accentNavy}/>
+          </svg>
+        </div>
+
+        {/* Coming Soon overlay */}
+        {!isReady && showCS && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+            style={{ background: 'rgba(245,242,238,0.88)' }}
+          >
+            <div style={{ width: 24, height: 1, background: THEME.borderMid }} />
+            <span
+              style={{
+                fontSize: '0.55rem',
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                color: THEME.textMuted,
+                fontFamily: "'Manrope', sans-serif",
+              }}
+            >
+              Coming Soon
+            </span>
+            <div style={{ width: 24, height: 1, background: THEME.borderMid }} />
+          </div>
+        )}
+
+        {/* Subtle glow on hover */}
+        {isReady && (
+          <div
+            className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style={{
+              background: `radial-gradient(ellipse at 50% 40%, ${THEME.accentSelected} 0%, transparent 70%)`,
+            }}
+          />
+        )}
+      </div>
+
+      {/* Card footer */}
+      <div
+        className="px-4 py-3 flex items-center justify-between flex-shrink-0"
+        style={{ borderTop: `1px solid ${THEME.borderSubtle}` }}
+      >
         <span
-          className="text-2xl font-bold tracking-[0.3em] uppercase"
-          style={{ fontFamily: "'Noto Serif', serif", color: '#e2e2e8' }}
+          className="text-sm font-light tracking-[0.08em]"
+          style={{ fontFamily: "'Noto Serif', serif", color: THEME.textPrimary }}
         >
-          ATELIER MARITIME
+          {model.name}
         </span>
-        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#bcc7de', borderTopColor: 'transparent' }} />
+        {isReady && (
+          <span
+            style={{
+              fontSize: '0.6rem',
+              letterSpacing: '0.1em',
+              color: THEME.textMuted,
+              fontFamily: "'Manrope', sans-serif",
+            }}
+          >
+            Configure →
+          </span>
+        )}
       </div>
     </div>
   )
 }
 
 export default function Home() {
-  const lightingMode = useConfiguratorStore(s => s.lightingMode)
-
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col" style={{ backgroundColor: '#0c0e12' }}>
-      {/* Top Bar */}
-      <header
-        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 lg:px-12 py-6"
+    <div
+      className="min-h-screen lg:h-screen lg:overflow-hidden w-screen flex flex-col items-center justify-center px-4 py-6 lg:px-12 lg:py-8"
+      style={{ backgroundColor: THEME.bgPage }}
+    >
+      {/* Brand signature */}
+      <span
+        className="mb-6 block"
         style={{
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
+          fontFamily: "'Manrope', sans-serif",
+          fontSize: '0.6rem',
+          letterSpacing: '0.55em',
+          textTransform: 'uppercase',
+          color: THEME.textMuted,
+          fontWeight: 300,
         }}
       >
-        <div className="flex items-center gap-4 lg:gap-8">
-          <span
-            className="text-xl lg:text-2xl font-bold tracking-[0.3em] uppercase"
-            style={{ fontFamily: "'Noto Serif', serif", color: '#fff' }}
-          >
-            ATELIER MARITIME
-          </span>
-        </div>
-      </header>
+        Atelier Maritime
+      </span>
 
-      {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden">
-        {/* 3D Viewport */}
-        <section className="flex-1 relative">
-          {/* Subtle gradient overlay at bottom */}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-32 z-10 pointer-events-none"
-            style={{
-              background: 'linear-gradient(180deg, transparent 0%, rgba(12,14,18,0.6) 100%)',
-            }}
-          />
-
-          {/* 3D Canvas */}
-          <Suspense fallback={<LoadingScreen />}>
-            <ConfiguratorScene />
-          </Suspense>
-
-          {/* Interaction Hints */}
-          <div
-            className="absolute bottom-8 left-8 z-20 flex flex-col gap-2 opacity-40"
-          >
-            <div className="flex items-center gap-3">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c6c6cd" strokeWidth="1.5">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                <polyline points="21 3 21 9 15 9" />
-              </svg>
-              <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: '#c6c6cd', fontFamily: "'Manrope', sans-serif" }}>
-                Orbit &amp; Pan
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c6c6cd" strokeWidth="1.5">
-                <path d="M15 15l-2 5L9 9l11 4-5 2z" />
-                <path d="M2 2l7.586 7.586" />
-              </svg>
-              <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: '#c6c6cd', fontFamily: "'Manrope', sans-serif" }}>
-                Click Stool to Swivel
-              </span>
-            </div>
-          </div>
-
-          {/* Lighting mode indicator */}
-          <div className="absolute top-20 right-6 z-20">
-            <span className="text-[9px] uppercase tracking-[0.5em] opacity-30" style={{ color: '#c6c6cd', fontFamily: "'Manrope', sans-serif" }}>
-              {lightingMode === 'studio' ? 'Studio Lighting' : 'Daylight'}
-            </span>
-          </div>
-        </section>
-
-        {/* Sidebar */}
-        <ConfigSidebar />
-      </main>
-
-      {/* Footer */}
-      <footer
-        className="px-6 lg:px-12 py-4 z-40 flex justify-between items-center pointer-events-none max-lg:hidden"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.03)' }}
+      {/* Product grid — 1 col mobile, 4 col desktop */}
+      <div
+        className="grid grid-cols-1 lg:grid-cols-4 w-full"
+        style={{ gap: '16px' }}
       >
-        <div className="flex items-center gap-6 opacity-40">
-          <span className="text-[10px] uppercase tracking-[0.5em]" style={{ fontFamily: "'Manrope', sans-serif", color: '#c6c6cd' }}>
-            limago studio
-          </span>
-          <div className="w-16 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.3)' }} />
-          <span className="text-[10px] uppercase tracking-[0.5em]" style={{ fontFamily: "'Manrope', sans-serif", color: '#c6c6cd' }}>
-            Serial No. AM-2024-HZN
-          </span>
-        </div>
-        <div className="flex gap-8 opacity-40">
-          <a className="text-[9px] uppercase tracking-[0.3em] hover:opacity-100 transition-opacity" style={{ color: '#c6c6cd' }} href="#">Technical Specs</a>
-          <a className="text-[9px] uppercase tracking-[0.3em] hover:opacity-100 transition-opacity" style={{ color: '#c6c6cd' }} href="#">Care Guide</a>
-          <a className="text-[9px] uppercase tracking-[0.3em] hover:opacity-100 transition-opacity" style={{ color: '#c6c6cd' }} href="#">Contact Artisan</a>
-        </div>
-      </footer>
+        {MODELS.map(model => (
+          <ProductCard key={model.id} model={model} />
+        ))}
+      </div>
+
+      {/* Bottom hint */}
+      <span
+        className="mt-5 block"
+        style={{
+          fontSize: '0.6rem',
+          letterSpacing: '0.3em',
+          textTransform: 'uppercase',
+          color: THEME.textMuted,
+          fontFamily: "'Manrope', sans-serif",
+        }}
+      >
+        Select a model to begin configuration
+      </span>
     </div>
   )
 }
