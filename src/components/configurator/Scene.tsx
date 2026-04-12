@@ -5,24 +5,50 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, Environment, ContactShadows, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { useConfiguratorStore, UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
-
-const MODEL_PATH = '/stool.glb'
+import { setCaptureViews } from '@/lib/capture-ref'
 
 // ──────────────────────────────────────
 // Mesh targets
 // ──────────────────────────────────────
 
-// Seduta = node "Cube.005" → Three.js strips dots → "Cube005"
-// Schienale = node "Cube.006" → "Cube006"
-const UPHOLSTERY_MESH_NAMES = new Set(['cube005', 'cube006'])
+const UPHOLSTERY_MESH_NAMES = new Set(['tessuto'])
+const STITCH_MESH_NAMES = new Set(['cuciture'])
+const METAL_MESH_NAMES = new Set(['metallo'])
 
-function isUpholsteryMesh(name: string): boolean {
-  return UPHOLSTERY_MESH_NAMES.has(name.toLowerCase())
+// Brushed 316 marine stainless steel
+const METAL_MAT = new THREE.MeshPhysicalMaterial({
+  color: new THREE.Color('#c2cad4'),
+  metalness: 1.0,
+  roughness: 0.20,
+  envMapIntensity: 3.6,
+  clearcoat: 0.15,
+  clearcoatRoughness: 0.10,
+})
+
+// Strip Three.js duplicate-node suffix (e.g. "tessuto.001" → "tessuto")
+function normalizeMeshName(name: string): string {
+  return name.toLowerCase().replace(/\.\d+$/, '')
 }
 
-function isArmrest(name: string): boolean {
-  const n = name.toLowerCase().replace(/[_\-\s]/g, '')
-  return n === 'bracciolosx' || n === 'bracciolodx'
+function isUpholsteryMesh(name: string): boolean {
+  return UPHOLSTERY_MESH_NAMES.has(normalizeMeshName(name))
+}
+
+function isStitchMesh(name: string): boolean {
+  return STITCH_MESH_NAMES.has(normalizeMeshName(name))
+}
+
+function isMetalMesh(name: string): boolean {
+  return METAL_MESH_NAMES.has(normalizeMeshName(name))
+}
+
+// Stitch color: slightly lighter for dark materials, slightly darker for light ones
+function deriveStitchColor(baseHex: string): THREE.Color {
+  const base = new THREE.Color(baseHex)
+  const hsl = { h: 0, s: 0, l: 0 }
+  base.getHSL(hsl)
+  const newL = hsl.l > 0.35 ? hsl.l * 0.65 : Math.min(0.95, hsl.l * 1.6)
+  return new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.05), newL)
 }
 
 function isRotatingBody(name: string): boolean {
@@ -40,24 +66,6 @@ function setRotatingBody(obj: THREE.Object3D | null) { rotatingBodyObj = obj }
 // ──────────────────────────────────────
 // Lighting
 // ──────────────────────────────────────
-function DaylightSetup() {
-  return (
-    <>
-      <ambientLight intensity={0.6} color="#fff5e6" />
-      <directionalLight
-        position={[5, 8, 5]}
-        intensity={1.8}
-        color="#fff8f0"
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
-      <directionalLight position={[-3, 6, -2]} intensity={0.5} color="#e8f0ff" />
-      <hemisphereLight args={['#b1e1ff', '#b97a20', 0.3]} />
-    </>
-  )
-}
-
 function StudioSetup() {
   return (
     <>
@@ -72,7 +80,8 @@ function StudioSetup() {
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-bias={-0.0002}
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.02}
         shadow-radius={10}
       />
 
@@ -111,22 +120,71 @@ function StudioSetup() {
 }
 
 // ──────────────────────────────────────
-// Stool rotation (click on stool only)
+// Seat mesh names per model
+// ──────────────────────────────────────
+// Mesh that physically rotates/moves
+function getSeatRotatingMeshName(modelId: string): string | null {
+  if (modelId === 'c111') return 'c111-seduta-tessuto'
+  if (modelId === 'c112') return 'c112-seduta-tessuto'
+  if (modelId === 'c113') return 'c113-seduta-acciaio'
+  if (modelId === 'c114') return 'c114-seduta-acciaio'
+  return null
+}
+
+// Mesh the user clicks to activate interaction (same as rotating for all current models)
+function getSeatHitMeshName(modelId: string): string | null {
+  return getSeatRotatingMeshName(modelId)
+}
+
+// ──────────────────────────────────────
+// Stool rotation — C111/C112 (whole rotatingBody)
 // ──────────────────────────────────────
 let isRotatingStool = false
 let prevClientX = 0
 let stoolTargetRotation = 0
 let stoolCurrentRotation = 0
 
-function StoolInteraction() {
+// ──────────────────────────────────────
+// Seat interaction — C113/C114
+// ──────────────────────────────────────
+const SEAT_HEIGHT_MAX = 0.198   // 198 mm in metres
+
+let seatObj: THREE.Object3D | null = null      // what rotates/moves
+let seatHitObj: THREE.Object3D | null = null   // what the user clicks
+let seatInitialPosY = 0
+let isSeatDragging = false
+let prevSeatClientX = 0
+let prevSeatClientY = 0
+let seatTargetRotY = 0
+let seatCurrentRotY = 0
+let seatTargetPosY = 0
+let seatCurrentPosY = 0
+
+function setSeatObjects(
+  rotating: THREE.Object3D | null,
+  hit: THREE.Object3D | null,
+  initialY = 0,
+) {
+  seatObj = rotating
+  seatHitObj = hit
+  seatInitialPosY = initialY
+  if (!rotating) {
+    seatTargetRotY = 0
+    seatCurrentRotY = 0
+    seatTargetPosY = 0
+    seatCurrentPosY = 0
+  }
+}
+
+function StoolInteraction({ modelId }: { modelId: string }) {
   const { gl, camera } = useThree()
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
+  const isSeatModel = true // all models use seat interaction
 
   useEffect(() => {
     const canvas = gl.domElement
 
     const onPointerDown = (e: PointerEvent) => {
-      if (!stoolSceneGroup) return
       if (e.button !== 0) return
 
       const rect = canvas.getBoundingClientRect()
@@ -135,25 +193,56 @@ function StoolInteraction() {
         -((e.clientY - rect.top) / rect.height) * 2 + 1,
       )
       raycaster.setFromCamera(mouse, camera)
-      const intersects = raycaster.intersectObjects(stoolSceneGroup.children, true)
 
-      if (intersects.length > 0) {
-        e.stopPropagation()
-        isRotatingStool = true
-        prevClientX = e.clientX
-        stoolTargetRotation = stoolCurrentRotation
+      if (isSeatModel) {
+        if (!seatHitObj) return
+        const hits = raycaster.intersectObjects([seatHitObj], true)
+        if (hits.length > 0) {
+          e.stopPropagation()
+          isSeatDragging = true
+          prevSeatClientX = e.clientX
+          prevSeatClientY = e.clientY
+        }
+      } else {
+        // C111/C112 — drag anywhere on model → rotatingBody spins
+        if (!stoolSceneGroup) return
+        const intersects = raycaster.intersectObjects(stoolSceneGroup.children, true)
+        if (intersects.length > 0) {
+          e.stopPropagation()
+          isRotatingStool = true
+          prevClientX = e.clientX
+          stoolTargetRotation = stoolCurrentRotation
+        }
       }
     }
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!isRotatingStool) return
-      const delta = e.clientX - prevClientX
-      prevClientX = e.clientX
-      stoolTargetRotation += delta * 0.008
+      if (isSeatModel) {
+        if (!isSeatDragging) return
+        const dx = e.clientX - prevSeatClientX
+        const dy = e.clientY - prevSeatClientY
+        prevSeatClientX = e.clientX
+        prevSeatClientY = e.clientY
+        // Horizontal drag → rotate seat on Y
+        seatTargetRotY -= dx * 0.008
+        // Vertical drag (C113 only) → adjust height; drag up = clientY decreases = positive offset
+        if (modelId === 'c113') {
+          seatTargetPosY = Math.max(0, Math.min(SEAT_HEIGHT_MAX, seatTargetPosY + dy * 0.0007))
+        }
+      } else {
+        if (!isRotatingStool) return
+        const delta = e.clientX - prevClientX
+        prevClientX = e.clientX
+        stoolTargetRotation -= delta * 0.008
+      }
     }
 
     const onPointerUp = () => {
-      if (isRotatingStool) isRotatingStool = false
+      if (isSeatModel) {
+        isSeatDragging = false
+      } else {
+        if (isRotatingStool) isRotatingStool = false
+      }
     }
 
     canvas.addEventListener('pointerdown', onPointerDown, { capture: true })
@@ -165,28 +254,34 @@ function StoolInteraction() {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
     }
-  }, [gl, camera, raycaster])
+  }, [gl, camera, raycaster, isSeatModel, modelId])
 
   useFrame((_, delta) => {
-    if (!rotatingBodyObj) return
-
-    if (isRotatingStool) {
-      stoolCurrentRotation = THREE.MathUtils.lerp(
-        stoolCurrentRotation,
-        stoolTargetRotation,
-        Math.min(1, delta * 15),
-      )
+    if (isSeatModel) {
+      if (!seatObj) return
+      // Spring-back to 0 when released — C111/C112 only
+      if (!isSeatDragging && (modelId === 'c111' || modelId === 'c112')) {
+        seatTargetRotY *= Math.pow(0.001, delta)
+        if (Math.abs(seatTargetRotY) < 0.001) seatTargetRotY = 0
+      }
+      seatCurrentRotY = THREE.MathUtils.lerp(seatCurrentRotY, seatTargetRotY, Math.min(1, delta * 12))
+      seatObj.rotation.y = seatCurrentRotY
+      // Height (C113 only)
+      if (modelId === 'c113') {
+        seatCurrentPosY = THREE.MathUtils.lerp(seatCurrentPosY, seatTargetPosY, Math.min(1, delta * 8))
+        seatObj.position.y = seatInitialPosY + seatCurrentPosY
+      }
     } else {
-      stoolTargetRotation *= Math.pow(0.0005, delta)
-      if (Math.abs(stoolTargetRotation) < 0.001) stoolTargetRotation = 0
-      stoolCurrentRotation = THREE.MathUtils.lerp(
-        stoolCurrentRotation,
-        stoolTargetRotation,
-        Math.min(1, delta * 6),
-      )
+      if (!rotatingBodyObj) return
+      if (isRotatingStool) {
+        stoolCurrentRotation = THREE.MathUtils.lerp(stoolCurrentRotation, stoolTargetRotation, Math.min(1, delta * 15))
+      } else {
+        stoolTargetRotation *= Math.pow(0.0005, delta)
+        if (Math.abs(stoolTargetRotation) < 0.001) stoolTargetRotation = 0
+        stoolCurrentRotation = THREE.MathUtils.lerp(stoolCurrentRotation, stoolTargetRotation, Math.min(1, delta * 6))
+      }
+      rotatingBodyObj.rotation.y = stoolCurrentRotation
     }
-
-    rotatingBodyObj.rotation.y = stoolCurrentRotation
   })
 
   return (
@@ -206,30 +301,49 @@ function StoolInteraction() {
 // ──────────────────────────────────────
 // Stool Model
 // ──────────────────────────────────────
-function StoolModel() {
-  const { scene } = useGLTF(MODEL_PATH)
-  const { upholsteryId, showArmrests } = useConfiguratorStore()
+function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) {
+  const { scene } = useGLTF(glbPath)
+  const { upholsteryId } = useConfiguratorStore()
 
-  // Build material from store — new object ogni volta che cambia upholsteryId
-  const upholsteryMat = useMemo(() => {
+  // Build materials from store — new objects ogni volta che cambia upholsteryId
+  const { upholsteryMat, stitchMat } = useMemo(() => {
     const m = UPHOLSTERY_MATERIALS.find(x => x.id === upholsteryId) || UPHOLSTERY_MATERIALS[0]
-    return new THREE.MeshStandardMaterial({
-      color: new THREE.Color(m.colorHex),
-      roughness: m.roughness,
-      metalness: m.metalness,
-      envMapIntensity: 1.0,
-    })
+    return {
+      upholsteryMat: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(m.colorHex),
+        roughness: m.roughness,
+        metalness: m.metalness,
+        envMapIntensity: 1.0,
+      }),
+      stitchMat: new THREE.MeshStandardMaterial({
+        color: deriveStitchColor(m.colorHex),
+        roughness: Math.min(0.95, m.roughness + 0.1),
+        metalness: 0,
+        envMapIntensity: 0.5,
+      }),
+    }
   }, [upholsteryId])
 
-  // First load: register refs, enable shadows, log hierarchy
+  // First load: register refs, enable shadows, apply static materials
   useEffect(() => {
     setStoolScene(scene)
+    const rotatingName = getSeatRotatingMeshName(modelId)
+    const hitName = getSeatHitMeshName(modelId)
+    let rotatingMesh: THREE.Object3D | null = null
+    let hitMesh: THREE.Object3D | null = null
 
     scene.traverse((child) => {
       child.castShadow = true
       child.receiveShadow = true
 
       if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh
+        const n = normalizeMeshName(child.name)
+
+        if (isMetalMesh(mesh.name)) mesh.material = METAL_MAT
+        if (rotatingName && n === rotatingName) rotatingMesh = child
+        if (hitName && n === hitName) hitMesh = child
+
         if (isRotatingBody(child.name)) setRotatingBody(child)
         else if (isRotatingBody(child.parent?.name || '') && !rotatingBodyObj) {
           setRotatingBody(child.parent!)
@@ -241,11 +355,14 @@ function StoolModel() {
       }
     })
 
+    setSeatObjects(rotatingMesh, hitMesh ?? rotatingMesh, (rotatingMesh as THREE.Object3D | null)?.position.y ?? 0)
+
     return () => {
       setStoolScene(null)
       setRotatingBody(null)
+      setSeatObjects(null, null)
     }
-  }, [scene])
+  }, [scene, modelId])
 
   // Apply material and visibility
   useEffect(() => {
@@ -253,64 +370,101 @@ function StoolModel() {
       const mesh = child as THREE.Mesh
       if (!mesh.isMesh) return
 
-      // Armrest visibility
-      if (isArmrest(mesh.name) || isArmrest(mesh.parent?.name || '')) {
-        mesh.visible = showArmrests
-        return
-      }
-
-      // Upholstery meshes
+      // Upholstery mesh
       if (isUpholsteryMesh(mesh.name)) {
         if (Array.isArray(mesh.material)) {
           mesh.material = mesh.material.map(() => upholsteryMat)
         } else {
           mesh.material = upholsteryMat
         }
-
-        // Ensure Three.js updates the GPU material(s).
         const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-        mats.forEach(m => {
-          m.needsUpdate = true
-        })
+        mats.forEach(m => { m.needsUpdate = true })
+        return
+      }
+
+      // Stitch mesh — derived color from upholstery
+      if (isStitchMesh(mesh.name)) {
+        if (Array.isArray(mesh.material)) {
+          mesh.material = mesh.material.map(() => stitchMat)
+        } else {
+          mesh.material = stitchMat
+        }
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        mats.forEach(m => { m.needsUpdate = true })
       }
     })
-  }, [scene, upholsteryMat, showArmrests])
+  }, [scene, upholsteryMat, stitchMat])
 
   return <primitive object={scene} />
 }
 // ──────────────────────────────────────
+// PDF Capture Handler
+// ──────────────────────────────────────
+function CaptureHandler() {
+  const { gl, camera, scene } = useThree()
+
+  useEffect(() => {
+    setCaptureViews(async () => {
+      const savedPos = camera.position.clone()
+      const savedQuat = camera.quaternion.clone()
+      const lookTarget = new THREE.Vector3(0, 0.7, 0)
+
+      const positions: Array<[number, number, number]> = [
+        [0,    1.2, 4.0 ],  // front
+        [4.0,  1.2, 0   ],  // right side
+        [0,    5.5, 0.01],  // top
+      ]
+
+      const aspectRatio = gl.domElement.width / gl.domElement.height
+
+      const images: string[] = []
+      for (const pos of positions) {
+        camera.position.set(...pos)
+        camera.lookAt(lookTarget)
+        camera.updateMatrixWorld()
+        gl.render(scene, camera)
+        images.push(gl.domElement.toDataURL('image/jpeg', 0.92))
+      }
+
+      // Restore original camera state
+      camera.position.copy(savedPos)
+      camera.quaternion.copy(savedQuat)
+      camera.updateMatrixWorld()
+      gl.render(scene, camera)
+
+      return { front: images[0], side: images[1], top: images[2], aspectRatio }
+    })
+
+    return () => { setCaptureViews(null) }
+  }, [gl, camera, scene])
+
+  return null
+}
+
+// ──────────────────────────────────────
 // Full Scene
 // ──────────────────────────────────────
-function SceneContent() {
-  const { lightingMode } = useConfiguratorStore()
-
+function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }) {
   return (
     <>
-      {/* Background: nero assoluto rimosso → blu scuro desaturato */}
-      <color attach="background" args={[lightingMode === 'studio' ? '#0d131f' : '#1a1c20']} />
-      <fog attach="fog" args={[lightingMode === 'studio' ? '#0d131f' : '#1a1c20', 10, 25]} />
+      <color attach="background" args={['#0d131f']} />
+      <fog attach="fog" args={['#0d131f', 10, 25]} />
 
-      {lightingMode === 'daylight' ? <DaylightSetup /> : <StudioSetup />}
+      <StudioSetup />
 
-      {/* Environment IBL — fondamentale per riflessi corretti sui metalli */}
-      {lightingMode === 'daylight' && (
-        <Environment preset="apartment" environmentIntensity={0.4} />
-      )}
-      {lightingMode === 'studio' && (
-        <Environment preset="studio" environmentIntensity={0.3} />
-      )}
+      <Environment files="/hdr-ambiente.exr" environmentIntensity={1.0} background={false} />
 
-      <StoolModel />
-      <StoolInteraction />
+      <StoolModel glbPath={glbPath} modelId={modelId} />
+      <StoolInteraction modelId={modelId} />
+      <CaptureHandler />
 
-      {/* ContactShadows presente in entrambe le modalità per radicare lo sgabello */}
       <ContactShadows
         position={[0, -0.01, 0]}
-        opacity={lightingMode === 'studio' ? 0.7 : 0.4}
+        opacity={0.7}
         scale={10}
-        blur={lightingMode === 'studio' ? 3 : 2}
+        blur={3}
         far={4}
-        color={lightingMode === 'studio' ? '#0a1628' : '#000000'}
+        color="#0a1628"
       />
     </>
   )
@@ -319,12 +473,10 @@ function SceneContent() {
 // ──────────────────────────────────────
 // Exported Canvas
 // ──────────────────────────────────────
-export default function ConfiguratorScene() {
-  const { lightingMode } = useConfiguratorStore()
-
+export default function ConfiguratorScene({ glbPath, modelId }: { glbPath: string; modelId: string }) {
   return (
     <Canvas
-      shadows
+      shadows={{ type: THREE.PCFSoftShadowMap }}
       camera={{
         position: [2.5, 2, 2.5],
         fov: 35,
@@ -333,13 +485,13 @@ export default function ConfiguratorScene() {
       }}
       gl={{
         antialias: true,
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: lightingMode === 'studio' ? 0.9 : 1.2,
+        toneMapping: THREE.AgXToneMapping,
+        toneMappingExposure: 0.9,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
-      style={{ background: lightingMode === 'studio' ? '#0d131f' : '#1a1c20' }}
+      style={{ background: '#0d131f' }}
     >
-      <SceneContent />
+      <SceneContent glbPath={glbPath} modelId={modelId} />
     </Canvas>
   )
 }
