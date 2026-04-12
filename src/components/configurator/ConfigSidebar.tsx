@@ -6,7 +6,6 @@ import {
   useConfiguratorStore,
   UPHOLSTERY_MATERIALS,
   type MaterialOption,
-  type MaterialCategory,
 } from '@/stores/configurator-store'
 import { generatePdf } from '@/lib/generate-pdf'
 import { THEME } from '@/lib/theme'
