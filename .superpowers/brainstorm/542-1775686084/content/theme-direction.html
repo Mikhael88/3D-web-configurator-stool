@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Theme Direction</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,300;0,400;1,300&family=Manrope:wght@200;300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: #1a1a1f;
+    color: #e2e2e8;
+    min-height: 100vh;
+    padding: 32px;
+  }
+  h2 {
+    font-family: 'Noto Serif', serif;
+    font-weight: 300;
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    color: #e2e2e8;
+    text-align: center;
+  }
+  .subtitle {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #909097;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .card {
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .card.selected { border-color: #7c9cdb; }
+  .card.selected::after {
+    content: '✓ Selected';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #7c9cdb;
+    color: #fff;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+  }
+  .card-label {
+    padding: 14px 18px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    background: #2a2a32;
+    color: #909097;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .mock {
+    padding: 28px 20px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* DARK VERSION */
+  .dark-mock {
+    background: #0c0e12;
+  }
+  .dark-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .dark-brand {
+    font-family: 'Noto Serif', serif;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #fff;
+    font-weight: 400;
+  }
+  .dark-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    flex: 1;
+  }
+  .dark-col {
+    background: #14161c;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 180px;
+  }
+  .dark-col-img {
+    flex: 1;
+    background: linear-gradient(160deg, #1a1f2e 0%, #0d1118 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dark-col-img svg { opacity: 0.25; }
+  .dark-col-foot {
+    padding: 10px 10px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #555563;
+    text-align: center;
+  }
+  .dark-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .dark-footer-text {
+    font-size: 8px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #404048;
+  }
+
+  /* LIGHT VERSION */
+  .light-mock {
+    background: #F8FAFC;
+  }
+  .light-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .light-brand {
+    font-family: 'Noto Serif', serif;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #2a3439;
+    font-weight: 400;
+  }
+  .light-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    flex: 1;
+  }
+  .light-col {
+    background: #ffffff;
+    border: 1px solid #e8eff3;
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 180px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .light-col-img {
+    flex: 1;
+    background: linear-gradient(160deg, #f0f4f7 0%, #e8eff3 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .light-col-img svg { opacity: 0.15; }
+  .light-col-foot {
+    padding: 10px 10px;
+    border-top: 1px solid #f0f4f7;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #a0aab0;
+    text-align: center;
+  }
+  .light-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.04);
+  }
+  .light-footer-text {
+    font-size: 8px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #c0ccd4;
+  }
+
+  .stool-icon { width: 40px; height: 60px; }
+</style>
+<script>
+  function selectCard(id) {
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(id).classList.add('selected');
+    // emit selection event
+    const data = { type: 'click', choice: id, text: id === 'dark' ? 'Keep dark luxury theme' : 'Move to light minimal theme', timestamp: Math.floor(Date.now()/1000) };
+    fetch('/__select', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).catch(()=>{});
+  }
+</script>
+</head>
+<body>
+  <h2>Theme Direction</h2>
+  <p class="subtitle">Which visual direction for the new homepage?</p>
+
+  <div class="split">
+
+    <!-- DARK -->
+    <div class="card" id="dark" onclick="selectCard('dark')">
+      <div class="card-label">A — Keep dark luxury theme</div>
+      <div class="mock dark-mock">
+        <div class="dark-header">
+          <span class="dark-brand">Atelier Maritime</span>
+          <span style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#555563">The Collection</span>
+        </div>
+        <div class="dark-cols">
+          <div class="dark-col">
+            <div class="dark-col-img">
+              <svg class="stool-icon" viewBox="0 0 40 60" fill="none">
+                <rect x="8" y="5" width="24" height="10" rx="1" fill="#bcc7de"/>
+                <rect x="14" y="15" width="12" height="28" rx="1" fill="#8899aa"/>
+                <ellipse cx="20" cy="45" rx="14" ry="4" fill="#6677880"/>
+                <rect x="6" y="48" width="28" height="4" rx="1" fill="#445566"/>
+              </svg>
+            </div>
+            <div class="dark-col-foot">Horizon Stool</div>
+          </div>
+          <div class="dark-col">
+            <div class="dark-col-img">
+              <svg class="stool-icon" viewBox="0 0 40 60" fill="none">
+                <rect x="6" y="8" width="28" height="8" rx="2" fill="#bcc7de"/>
+                <rect x="16" y="16" width="8" height="30" rx="1" fill="#8899aa"/>
+                <rect x="4" y="46" width="32" height="5" rx="1" fill="#445566"/>
+              </svg>
+            </div>
+            <div class="dark-col-foot">Coming Soon</div>
+          </div>
+          <div class="dark-col">
+            <div class="dark-col-img">
+              <svg class="stool-icon" viewBox="0 0 40 60" fill="none">
+                <ellipse cx="20" cy="12" rx="16" ry="6" fill="#bcc7de"/>
+                <rect x="17" y="18" width="6" height="26" rx="1" fill="#8899aa"/>
+                <rect x="4" y="44" width="32" height="6" rx="2" fill="#445566"/>
+              </svg>
+            </div>
+            <div class="dark-col-foot">Coming Soon</div>
+          </div>
+        </div>
+        <div class="dark-footer">
+          <span class="dark-footer-text">Lumière Nordique</span>
+          <span class="dark-footer-text">Select a model</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIGHT -->
+    <div class="card" id="light" onclick="selectCard('light')">
+      <div class="card-label">B — Move to light minimal theme</div>
+      <div class="mock light-mock">
+        <div class="light-header">
+          <span class="light-brand">Atelier Maritime</span>
+          <span style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#a0aab0">The Collection</span>
+        </div>
+        <div class="light-cols">
+          <div class="light-col">
+            <div class="light-col-img">
+              <svg class="stool-icon" viewBox="0 0 40 60" fill="none">
+                <rect x="8" y="5" width="24" height="10" rx="1" fill="#555f71"/>
+                <rect x="14" y="15" width="12" height="28" rx="1" fill="#8899aa"/>
+                <ellipse cx="20" cy="45" rx="14" ry="4" fill="#aabbcc"/>
+                <rect x="6" y="48" width="28" height="4" rx="1" fill="#6677880"/>
+              </svg>
+            </div>
+            <div class="light-col-foot">Horizon Stool</div>
+          </div>
+          <div class="light-col">
+            <div class="light-col-img">
+              <svg class="stool-icon" viewBox="0 0 40 60" fill="none">
+                <rect x="6" y="8" width="28" height="8" rx="2" fill="#555f71"/>
+                <rect x="16" y="16" width="8" height="30" rx="1" fill="#8899aa"/>
+                <rect x="4" y="46" width="32" height="5" rx="1" fill="#aabbcc"/>
+              </svg>
+            </div>
+            <div class="light-col-foot">Coming Soon</div>
+          </div>
+          <div class="light-col">
+            <div class="light-col-img">
+              <svg class="stool-icon" viewBox="0 0 40 60" fill="none">
+                <ellipse cx="20" cy="12" rx="16" ry="6" fill="#555f71"/>
+                <rect x="17" y="18" width="6" height="26" rx="1" fill="#8899aa"/>
+                <rect x="4" y="44" width="32" height="6" rx="2" fill="#aabbcc"/>
+              </svg>
+            </div>
+            <div class="light-col-foot">Coming Soon</div>
+          </div>
+        </div>
+        <div class="light-footer">
+          <span class="light-footer-text">Lumière Nordique</span>
+          <span class="light-footer-text" style="color:#8899aa">Select a model →</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p style="text-align:center;font-size:11px;color:#555563;margin-top:28px;letter-spacing:0.08em;">
+    Note: the configurator (dark/3D screen) stays as-is — this only affects the new selection homepage.
+    <br/>Click a card to select, then confirm in terminal.
+  </p>
+</body>
+</html>

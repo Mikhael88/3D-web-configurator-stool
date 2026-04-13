@@ -33,7 +33,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
 
   return (
     <div
-      className="lg:hidden fixed bottom-0 left-0 right-0"
+      className="lg:hidden fixed bottom-0 left-0 right-0 flex flex-col"
       style={{
         zIndex: 40,
         background: THEME.bgSidebar,
@@ -42,8 +42,6 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
         height: '55vh',
         transform: expanded ? 'translateY(0)' : 'translateY(calc(100% - 48px))',
         transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
-        display: 'flex',
-        flexDirection: 'column',
       }}
     >
       {/* Drag handle — tap to toggle */}

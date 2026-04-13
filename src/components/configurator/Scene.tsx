@@ -11,9 +11,8 @@ import { setCaptureViews } from '@/lib/capture-ref'
 // Mesh targets
 // ──────────────────────────────────────
 
-const UPHOLSTERY_MESH_NAMES = new Set(['tessuto'])
-const STITCH_MESH_NAMES = new Set(['cuciture'])
-const METAL_MESH_NAMES = new Set(['metallo'])
+// Mesh name matching: exact 'tessuto' / 'cuciture' / 'metallo',
+// or compound names ending with that suffix (e.g. 'c111-seduta-tessuto')
 
 // Brushed 316 marine stainless steel
 const METAL_MAT = new THREE.MeshPhysicalMaterial({
@@ -31,15 +30,18 @@ function normalizeMeshName(name: string): string {
 }
 
 function isUpholsteryMesh(name: string): boolean {
-  return UPHOLSTERY_MESH_NAMES.has(normalizeMeshName(name))
+  const n = normalizeMeshName(name)
+  return n === 'tessuto' || n.includes('-tessuto')
 }
 
 function isStitchMesh(name: string): boolean {
-  return STITCH_MESH_NAMES.has(normalizeMeshName(name))
+  const n = normalizeMeshName(name)
+  return n === 'cuciture' || n.includes('-cuciture')
 }
 
 function isMetalMesh(name: string): boolean {
-  return METAL_MESH_NAMES.has(normalizeMeshName(name))
+  const n = normalizeMeshName(name)
+  return n === 'metallo' || n.includes('-metallo')
 }
 
 // Stitch color: slightly lighter for dark materials, slightly darker for light ones

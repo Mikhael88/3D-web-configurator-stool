@@ -20,10 +20,11 @@ function ProductCard({ model }: { model: ModelConfig }) {
       onClick={handleClick}
       onMouseEnter={() => { if (!isReady) setShowCS(true) }}
       onMouseLeave={() => setShowCS(false)}
-      className="relative flex flex-col overflow-hidden transition-all duration-300"
+      className="relative flex flex-col overflow-hidden transition-all duration-300 lg:flex-1"
       style={{
         background: THEME.bgCard,
-        border: `1px solid ${isReady ? THEME.borderSubtle : 'rgba(44,62,80,0.04)'}`,
+        borderRight: `1px solid ${THEME.borderSubtle}`,
+        borderBottom: `1px solid ${isReady ? THEME.borderSubtle : 'rgba(44,62,80,0.04)'}`,
         cursor: isReady ? 'pointer' : 'default',
         opacity: isReady ? 1 : 0.45,
       }}
@@ -106,47 +107,46 @@ function ProductCard({ model }: { model: ModelConfig }) {
 export default function Home() {
   return (
     <div
-      className="min-h-screen lg:h-screen lg:overflow-hidden w-screen flex flex-col items-center justify-center px-4 py-6 lg:px-12 lg:py-8"
+      className="w-screen flex flex-col min-h-screen lg:h-screen lg:overflow-hidden"
       style={{ backgroundColor: THEME.bgPage }}
     >
-      {/* Brand signature */}
-      <span
-        className="mb-6 block"
-        style={{
-          fontFamily: "'Manrope', sans-serif",
-          fontSize: '0.6rem',
-          letterSpacing: '0.55em',
-          textTransform: 'uppercase',
-          color: THEME.textMuted,
-          fontWeight: 300,
-        }}
-      >
-        Atelier Maritime
-      </span>
+      {/* Brand signature — mobile only (desktop shows it inside the grid) */}
+      <div className="flex flex-col items-center px-4 py-6 lg:hidden">
+        <span
+          style={{
+            fontFamily: "'Manrope', sans-serif",
+            fontSize: '0.6rem',
+            letterSpacing: '0.55em',
+            textTransform: 'uppercase',
+            color: THEME.textMuted,
+            fontWeight: 300,
+          }}
+        >
+          Atelier Maritime
+        </span>
+      </div>
 
-      {/* Product grid — 1 col mobile, 4 col desktop */}
-      <div
-        className="grid grid-cols-1 lg:grid-cols-4 w-full"
-        style={{ gap: '16px' }}
-      >
+      {/* Product grid — 1 col scrollable mobile, 4 col full-height desktop */}
+      <div className="flex flex-col lg:flex-row lg:flex-1 lg:h-full">
         {MODELS.map(model => (
           <ProductCard key={model.id} model={model} />
         ))}
       </div>
 
-      {/* Bottom hint */}
-      <span
-        className="mt-5 block"
-        style={{
-          fontSize: '0.6rem',
-          letterSpacing: '0.3em',
-          textTransform: 'uppercase',
-          color: THEME.textMuted,
-          fontFamily: "'Manrope', sans-serif",
-        }}
-      >
-        Select a model to begin configuration
-      </span>
+      {/* Bottom hint — mobile only */}
+      <div className="flex justify-center px-4 py-5 lg:hidden">
+        <span
+          style={{
+            fontSize: '0.6rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: THEME.textMuted,
+            fontFamily: "'Manrope', sans-serif",
+          }}
+        >
+          Select a model to begin configuration
+        </span>
+      </div>
     </div>
   )
 }

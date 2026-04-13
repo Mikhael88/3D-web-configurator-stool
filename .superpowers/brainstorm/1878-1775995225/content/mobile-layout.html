@@ -1,0 +1,101 @@
+<h2>Mobile Layout Design</h2>
+<p class="subtitle">Two states: sidebar expanded (left) vs collapsed while interacting with model (right)</p>
+
+<div class="split">
+
+  <!-- STATE 1: Expanded -->
+  <div class="mockup">
+    <div class="mockup-header">Sidebar Expanded</div>
+    <div class="mockup-body" style="padding:0; background:#f5f2ee; display:flex; flex-direction:column; height:600px; position:relative; overflow:hidden;">
+
+      <!-- Canvas area -->
+      <div style="flex:1; background:linear-gradient(160deg,#dde4ec 0%,#c8d2de 100%); display:flex; align-items:center; justify-content:center; position:relative; min-height:0;">
+        <div style="text-align:center;">
+          <div style="width:60px;height:80px;margin:0 auto;background:rgba(44,62,80,0.15);border-radius:4px;"></div>
+          <div style="font-size:10px;color:rgba(44,62,80,0.5);margin-top:8px;font-family:sans-serif;">3D Canvas</div>
+        </div>
+      </div>
+
+      <!-- Bottom Sheet: expanded -->
+      <div style="background:#fff; border-top:1px solid rgba(44,62,80,0.08); height:55%; display:flex; flex-direction:column; box-shadow:0 -4px 24px rgba(0,0,0,0.08);">
+        <!-- Drag handle -->
+        <div style="display:flex;justify-content:center;padding:10px 0 6px;">
+          <div style="width:36px;height:4px;background:rgba(44,62,80,0.2);border-radius:2px;"></div>
+        </div>
+        <!-- Content -->
+        <div style="padding:0 16px;overflow-y:auto;flex:1;">
+          <div style="font-size:9px;letter-spacing:0.3em;color:#7a9bb5;text-transform:uppercase;font-family:sans-serif;">The Maritime Series</div>
+          <div style="font-size:22px;color:#2c3e50;font-family:Georgia,serif;margin:4px 0 8px;">C111</div>
+
+          <!-- Material buttons -->
+          <div style="font-size:8px;letter-spacing:0.2em;color:rgba(44,62,80,0.4);text-transform:uppercase;margin-bottom:6px;font-family:sans-serif;">Seat &amp; Backrest</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <div style="flex:1;padding:10px;border:1px solid rgba(44,62,80,0.15);border-radius:2px;text-align:center;background:#f9f8f6;">
+              <div style="font-size:9px;color:#2c3e50;font-family:sans-serif;letter-spacing:0.05em;">FABRIC ▲</div>
+            </div>
+            <div style="flex:1;padding:10px;border:1px solid rgba(44,62,80,0.15);border-radius:2px;text-align:center;background:#f9f8f6;">
+              <div style="font-size:9px;color:#2c3e50;font-family:sans-serif;letter-spacing:0.05em;">LEATHER ▲</div>
+            </div>
+          </div>
+
+          <!-- Lighting -->
+          <div style="font-size:8px;letter-spacing:0.2em;color:rgba(44,62,80,0.4);text-transform:uppercase;margin-bottom:6px;font-family:sans-serif;">Lighting</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <div style="flex:1;padding:8px;border:1px solid rgba(122,155,181,0.5);background:rgba(122,155,181,0.08);border-radius:2px;text-align:center;font-size:9px;color:#2c3e50;font-family:sans-serif;">Dark Studio</div>
+            <div style="flex:1;padding:8px;border:1px solid rgba(44,62,80,0.1);border-radius:2px;text-align:center;font-size:9px;color:rgba(44,62,80,0.5);font-family:sans-serif;">Daylight</div>
+          </div>
+
+          <!-- Buttons -->
+          <div style="display:flex;gap:8px;">
+            <div style="flex:1;padding:10px;background:#2c3e50;text-align:center;font-size:9px;color:#fff;letter-spacing:0.2em;font-family:sans-serif;">SAVE PDF</div>
+            <div style="flex:1;padding:10px;border:1px solid rgba(44,62,80,0.2);text-align:center;font-size:9px;color:#2c3e50;letter-spacing:0.2em;font-family:sans-serif;">CONTACT</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE 2: Collapsed (interacting with model) -->
+  <div class="mockup">
+    <div class="mockup-header">Sidebar Collapsed (dragging model)</div>
+    <div class="mockup-body" style="padding:0; background:#f5f2ee; display:flex; flex-direction:column; height:600px; position:relative; overflow:hidden;">
+
+      <!-- Canvas area — full screen -->
+      <div style="flex:1; background:linear-gradient(160deg,#dde4ec 0%,#c8d2de 100%); display:flex; align-items:center; justify-content:center; position:relative;">
+        <div style="text-align:center;">
+          <div style="width:60px;height:80px;margin:0 auto;background:rgba(44,62,80,0.2);border-radius:4px;"></div>
+          <div style="font-size:10px;color:rgba(44,62,80,0.5);margin-top:8px;font-family:sans-serif;">3D Canvas — Full</div>
+        </div>
+        <!-- Collapse indicator -->
+        <div style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid rgba(44,62,80,0.08);padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 -4px 24px rgba(0,0,0,0.08);">
+          <div style="width:36px;height:4px;background:rgba(44,62,80,0.2);border-radius:2px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <h3>Drop-up Tray (after tapping FABRIC or LEATHER)</h3>
+  <div style="max-width:300px;margin:0 auto;">
+    <div class="mockup">
+      <div class="mockup-header">Fabric Tray — overlays canvas from bottom</div>
+      <div class="mockup-body" style="padding:0;background:#f5f2ee;height:220px;position:relative;overflow:hidden;">
+        <div style="background:linear-gradient(160deg,#dde4ec 0%,#c8d2de 100%);height:100%;"></div>
+        <!-- Tray -->
+        <div style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid rgba(44,62,80,0.1);padding:16px;box-shadow:0 -8px 32px rgba(0,0,0,0.12);">
+          <div style="font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:rgba(44,62,80,0.4);margin-bottom:12px;font-family:sans-serif;">Fabric</div>
+          <div style="display:flex;gap:12px;justify-content:center;align-items:center;">
+            <div style="width:40px;height:40px;border-radius:50%;background:#e8ddd0;border:3px solid #2c3e50;box-shadow:0 0 0 3px rgba(44,62,80,0.15);"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#c9b99a;border:2px solid rgba(44,62,80,0.1);"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#7a9bb5;border:2px solid rgba(44,62,80,0.1);"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#4a5a6a;border:2px solid rgba(44,62,80,0.1);"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#2c3e50;border:2px solid rgba(44,62,80,0.1);"></div>
+          </div>
+          <div style="margin-top:10px;text-align:center;font-size:8px;color:rgba(44,62,80,0.4);font-family:sans-serif;">Sand Linen (selected)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

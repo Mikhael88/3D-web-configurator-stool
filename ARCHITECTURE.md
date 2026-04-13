@@ -106,36 +106,20 @@ Three.js conserva i punti nei nomi dei nodi (es. `"Cube.005"` rimane `"Cube.005"
 I mesh target per la tappezzeria sono identificati dal **nome del node** (non del mesh).
 Vedi `MODELS.md` per i nomi esatti.
 
-## Espansione futura: Model Selection Screen
-
-Quando verrà aggiunta la schermata di selezione modello, l'architettura suggerita è:
+## Routing
 
 ```
 app/
-├── page.tsx                         # Model selection screen (nuova homepage)
+├── page.tsx                         # Product selection homepage (C111 / C113 / C114)
 └── configure/
     └── [model]/
-        └── page.tsx                 # Configuratore 3D per modello specifico
+        └── page.tsx                 # 3D configurator for the selected model
 ```
 
-Ogni modello avrà la propria configurazione centralizzata:
-```ts
-// src/models/index.ts (da creare)
-export const MODELS: ModelConfig[] = [
-  {
-    id: 'horizon-stool',
-    name: 'Horizon Stool',
-    glbPath: '/stool.glb',
-    upholsteryMeshNames: ['cube.005', 'cube.006'],
-    armrestNodeNames: ['bracciolo-dx', 'bracciolo-sx'],
-    rotatingBodyName: 'rotating-body',
-    materials: UPHOLSTERY_MATERIALS,
-  },
-  // ...altri modelli
-]
-```
-
-Lo store Zustand dovrà gestire il `modelId` corrente e resettarsi al cambio modello.
+Models are defined in `src/models/index.ts` as `MODELS: ModelConfig[]`.
+Each model with `glbPath: null` is shown as "Coming Soon" on the homepage.
+Clicking C111 navigates to `/configure/c111`; the configurator reads `params.model`,
+looks up the config, and passes `glbPath` to `ConfiguratorScene`.
 
 ## API route di debug
 

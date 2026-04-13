@@ -1,0 +1,142 @@
+'use client'
+
+import { Suspense, use, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { notFound } from 'next/navigation'
+import { useConfiguratorStore } from '@/stores/configurator-store'
+import ConfigSidebar from '@/components/configurator/ConfigSidebar'
+import BottomSheet from '@/components/configurator/BottomSheet'
+import MaterialTray from '@/components/configurator/MaterialTray'
+import { MODELS } from '@/models'
+import { THEME } from '@/lib/theme'
+
+const ConfiguratorScene = dynamic(
+  () => import('@/components/configurator/Scene'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#0d131f' }}>
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: '#8a9bb5', borderTopColor: 'transparent' }}
+          />
+          <span className="text-xs uppercase tracking-[0.3em]" style={{ color: '#8a9bb5' }}>
+            Loading 3D Scene
+          </span>
+        </div>
+      </div>
+    ),
+  }
+)
+
+function LoadingScreen() {
+  return (
+    <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: '#0d131f' }}>
+      <div className="flex flex-col items-center gap-6">
+        <span
+          className="text-2xl font-bold tracking-[0.3em] uppercase"
+          style={{ fontFamily: "'Noto Serif', serif", color: '#e2e2e8' }}
+        >
+          ATELIER MARITIME
+        </span>
+        <div
+          className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+          style={{ borderColor: '#8a9bb5', borderTopColor: 'transparent' }}
+        />
+      </div>
+    </div>
+  )
+}
+
+export default function ConfiguratorPage({
+  params,
+}: {
+  params: Promise<{ model: string }>
+}) {
+  const { model: modelId } = use(params)
+  const modelConfig = MODELS.find(m => m.id === modelId)
+  const setInteracting = useConfiguratorStore(s => s.setInteracting)
+  const [activeTray, setActiveTray] = useState<'fabric' | 'leather' | null>(null)
+
+  if (!modelConfig?.glbPath) notFound()
+
+  return (
+    <div
+      className="h-screen w-screen overflow-hidden flex flex-col"
+      style={{ backgroundColor: THEME.bgPage }}
+    >
+      <main className="flex flex-1 overflow-hidden">
+        {/* 3D Viewport */}
+        <section
+          className="flex-1 relative"
+          onPointerDown={() => setInteracting(true)}
+          onPointerUp={() => setInteracting(false)}
+          onPointerCancel={() => setInteracting(false)}
+        >
+          {/* Bottom gradient — aids canvas readability at the fold */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-32 z-10 pointer-events-none"
+            style={{
+              background: 'linear-gradient(180deg, transparent 0%, rgba(13,19,31,0.6) 100%)',
+            }}
+          />
+
+          {/* 3D Canvas */}
+          <Suspense fallback={<LoadingScreen />}>
+            <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} />
+          </Suspense>
+
+          {/* Interaction hints — desktop only */}
+          <div className="absolute bottom-8 left-8 z-20 hidden lg:flex flex-col gap-2 opacity-40">
+            <div className="flex items-center gap-3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c6c6cd" strokeWidth="1.5">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                <polyline points="21 3 21 9 15 9" />
+              </svg>
+              <span
+                className="text-[10px] uppercase tracking-[0.2em]"
+                style={{ color: '#c6c6cd', fontFamily: "'Manrope', sans-serif" }}
+              >
+                Orbit &amp; Pan
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c6c6cd" strokeWidth="1.5">
+                <path d="M15 15l-2 5L9 9l11 4-5 2z" />
+                <path d="M2 2l7.586 7.586" />
+              </svg>
+              <span
+                className="text-[10px] uppercase tracking-[0.2em]"
+                style={{ color: '#c6c6cd', fontFamily: "'Manrope', sans-serif" }}
+              >
+                Click Stool to Swivel
+              </span>
+            </div>
+          </div>
+
+          {/* Product name overlay — mobile only, on dark canvas so use light text */}
+          <div className="absolute top-3 left-4 z-20 lg:hidden">
+            <span
+              style={{
+                fontFamily: "'Noto Serif', serif",
+                fontSize: '1.25rem',
+                color: '#e2e2e8',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {modelId.toUpperCase()}
+            </span>
+          </div>
+        </section>
+
+        {/* Desktop sidebar — has max-lg:hidden built in */}
+        <ConfigSidebar />
+      </main>
+
+      {/* Mobile UI — hidden on desktop */}
+      <BottomSheet modelId={modelId} onOpenTray={setActiveTray} />
+      <MaterialTray category={activeTray} onClose={() => setActiveTray(null)} />
+    </div>
+  )
+}
