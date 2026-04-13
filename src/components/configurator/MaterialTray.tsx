@@ -50,7 +50,7 @@ export default function MaterialTray({ category, onClose }: Props) {
         style={{
           zIndex: 50,
           background: THEME.bgSidebar,
-          borderTop: `1px solid ${THEME.borderSubtle}`,
+          borderTop: `1px solid ${THEME.borderSageSubtle}`,
           boxShadow: THEME.shadowTray,
           padding: '16px 24px 32px',
         }}
@@ -69,7 +69,7 @@ export default function MaterialTray({ category, onClose }: Props) {
               fontSize: '0.6rem',
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: THEME.textMuted,
+              color: THEME.textOnSageMuted,
               fontFamily: "'Manrope', sans-serif",
             }}
           >
@@ -78,7 +78,7 @@ export default function MaterialTray({ category, onClose }: Props) {
           <div
             style={{
               fontSize: '0.65rem',
-              color: THEME.textMuted,
+              color: THEME.textOnSageMuted,
               fontFamily: "'Manrope', sans-serif",
             }}
           >
@@ -99,9 +99,9 @@ export default function MaterialTray({ category, onClose }: Props) {
                 backgroundColor: mat.color,
                 border: upholsteryId === mat.id
                   ? `3px solid ${THEME.accentNavy}`
-                  : `2px solid ${THEME.borderMid}`,
+                  : `2px solid ${THEME.borderSageMid}`,
                 boxShadow: upholsteryId === mat.id
-                  ? `0 0 0 3px ${THEME.accentSelected}`
+                  ? `0 0 0 3px ${THEME.accentSelectedOnSage}`
                   : 'none',
                 cursor: 'pointer',
                 padding: 0,

@@ -4,19 +4,19 @@
 /* ── Design Tokens ── */
 :root {
   --bg-page:      #f5f2ee;
-  --bg-sidebar:   #ffffff;
+  --bg-sidebar:   #728473;
   --bg-card:      #ffffff;
-  --bg-input:     #f9f8f6;
-  --text-primary:   #2c3e50;
-  --text-secondary: rgba(44,62,80,0.65);
-  --text-muted:     rgba(44,62,80,0.35);
+  --bg-input:     rgba(255,255,255,0.10);
+  --text-primary:   #2e3d2f;
+  --text-secondary: rgba(46,61,47,0.65);
+  --text-muted:     rgba(46,61,47,0.35);
   --text-inverse:   #ffffff;
-  --accent-navy:    #2c3e50;
+  --accent-navy:    #2e3d2f;
   --accent-sand:    #c9b99a;
-  --accent-slate:   #7a9bb5;
-  --border-subtle:  rgba(44,62,80,0.08);
-  --border-mid:     rgba(44,62,80,0.15);
-  --border-strong:  rgba(44,62,80,0.25);
+  --accent-slate:   #a3b4a4;
+  --border-subtle:  rgba(46,61,47,0.08);
+  --border-mid:     rgba(46,61,47,0.15);
+  --border-strong:  rgba(46,61,47,0.25);
   --shadow-sheet: 0 -4px 24px rgba(0,0,0,0.08);
   --shadow-tray:  0 -8px 32px rgba(0,0,0,0.12);
 }
@@ -71,6 +71,6 @@ canvas:active {
 
 /* Selection color */
 ::selection {
-  background: rgba(44, 62, 80, 0.15);
+  background: rgba(46, 61, 47, 0.15);
   color: var(--text-primary);
 }

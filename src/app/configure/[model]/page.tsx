@@ -15,13 +15,13 @@ const ConfiguratorScene = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#0d131f' }}>
+      <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#ffffff' }}>
         <div className="flex flex-col items-center gap-4">
           <div
             className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
-            style={{ borderColor: '#8a9bb5', borderTopColor: 'transparent' }}
+            style={{ borderColor: '#728473', borderTopColor: 'transparent' }}
           />
-          <span className="text-xs uppercase tracking-[0.3em]" style={{ color: '#8a9bb5' }}>
+          <span className="text-xs uppercase tracking-[0.3em]" style={{ color: '#728473' }}>
             Loading 3D Scene
           </span>
         </div>
@@ -32,17 +32,17 @@ const ConfiguratorScene = dynamic(
 
 function LoadingScreen() {
   return (
-    <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: '#0d131f' }}>
+    <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: '#ffffff' }}>
       <div className="flex flex-col items-center gap-6">
         <span
           className="text-2xl font-bold tracking-[0.3em] uppercase"
-          style={{ fontFamily: "'Noto Serif', serif", color: '#e2e2e8' }}
+          style={{ fontFamily: "'Noto Serif', serif", color: '#2e3d2f' }}
         >
           ATELIER MARITIME
         </span>
         <div
           className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: '#8a9bb5', borderTopColor: 'transparent' }}
+          style={{ borderColor: '#728473', borderTopColor: 'transparent' }}
         />
       </div>
     </div>
@@ -90,42 +90,42 @@ export default function ConfiguratorPage({
           {/* Interaction hints — desktop only */}
           <div className="absolute bottom-8 left-8 z-20 hidden lg:flex flex-col gap-2 opacity-40">
             <div className="flex items-center gap-3">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c6c6cd" strokeWidth="1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#728473" strokeWidth="1.5">
                 <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                 <polyline points="21 3 21 9 15 9" />
               </svg>
               <span
                 className="text-[10px] uppercase tracking-[0.2em]"
-                style={{ color: '#c6c6cd', fontFamily: "'Manrope', sans-serif" }}
+                style={{ color: '#728473', fontFamily: "'Manrope', sans-serif" }}
               >
                 Orbit &amp; Pan
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c6c6cd" strokeWidth="1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#728473" strokeWidth="1.5">
                 <path d="M15 15l-2 5L9 9l11 4-5 2z" />
                 <path d="M2 2l7.586 7.586" />
               </svg>
               <span
                 className="text-[10px] uppercase tracking-[0.2em]"
-                style={{ color: '#c6c6cd', fontFamily: "'Manrope', sans-serif" }}
+                style={{ color: '#728473', fontFamily: "'Manrope', sans-serif" }}
               >
                 Click Stool to Swivel
               </span>
             </div>
           </div>
 
-          {/* Product name overlay — mobile only, on dark canvas so use light text */}
+          {/* Product name overlay — mobile only */}
           <div className="absolute top-3 left-4 z-20 lg:hidden">
             <span
               style={{
                 fontFamily: "'Noto Serif', serif",
                 fontSize: '1.25rem',
-                color: '#e2e2e8',
+                color: '#2e3d2f',
                 letterSpacing: '0.02em',
               }}
             >
-              {modelId.toUpperCase()}
+              {modelConfig?.name ?? modelId.toUpperCase()}
             </span>
           </div>
         </section>

@@ -14,15 +14,17 @@ import { setCaptureViews } from '@/lib/capture-ref'
 // Mesh name matching: exact 'tessuto' / 'cuciture' / 'metallo',
 // or compound names ending with that suffix (e.g. 'c111-seduta-tessuto')
 
-// Brushed 316 marine stainless steel
-const METAL_MAT = new THREE.MeshPhysicalMaterial({
-  color: new THREE.Color('#c2cad4'),
-  metalness: 1.0,
-  roughness: 0.20,
-  envMapIntensity: 3.6,
-  clearcoat: 0.15,
-  clearcoatRoughness: 0.10,
-})
+// Brushed 316 marine stainless steel — created inside component via useMemo
+function makeMetalMat() {
+  return new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color('#c2cad4'),
+    metalness: 1.0,
+    roughness: 0.15,
+    envMapIntensity: 20,
+    clearcoat: 0.15,
+    clearcoatRoughness: 0.10,
+  })
+}
 
 // Strip Three.js duplicate-node suffix (e.g. "tessuto.001" → "tessuto")
 function normalizeMeshName(name: string): string {
@@ -71,14 +73,14 @@ function setRotatingBody(obj: THREE.Object3D | null) { rotatingBodyObj = obj }
 function StudioSetup() {
   return (
     <>
-      {/* 1. Fill light — blu notte che solleva le ombre senza bruciare i neri */}
-      <ambientLight intensity={0.6} color="#1a2b4c" />
+      {/* 1. Fill light — luce bianca neutra che solleva le ombre senza bruciare i neri */}
+      <ambientLight intensity={0.6} color="#ffffff" />
 
       {/* 2. Key light — frontale/laterale, neutro, proietta le ombre */}
       <directionalLight
         position={[5, 5, 5]}
         intensity={1.5}
-        color="#e8eeff"
+        color="#ffffff"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -87,18 +89,18 @@ function StudioSetup() {
         shadow-radius={10}
       />
 
-      {/* 3. Rim light principale — luce fredda dietro il modello, crea il filo luminoso */}
+      {/* 3. Rim light principale — luce bianca dietro il modello, crea il filo luminoso */}
       <directionalLight
         position={[-4, 3, -5]}
         intensity={2.2}
-        color="#a8c8ff"
+        color="#ffffff"
       />
 
       {/* 4. Rim light secondario opposto — bilancia il contorno */}
       <directionalLight
         position={[4, 2, -4]}
         intensity={0.8}
-        color="#c0d8ff"
+        color="#f0f0f0"
       />
 
       {/* 5. Ground glow — spot ampio con penumbra massima per il bagliore alla base */}
@@ -107,16 +109,10 @@ function StudioSetup() {
         angle={Math.PI / 2.5}
         penumbra={1}
         intensity={0.4}
-        color="#1a3060"
+        color="#e8e8e8"
         castShadow={false}
       />
 
-      {/* 6. Shadow catcher: show only projected shadows (no reflective plane) */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-        {/* Use a very large plane to avoid seeing the catcher boundary */}
-        <planeGeometry args={[200, 200]} /> 
-        <shadowMaterial attach="material" opacity={0.3} />
-      </mesh>
     </>
   )
 }
@@ -307,6 +303,9 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
   const { scene } = useGLTF(glbPath)
   const { upholsteryId } = useConfiguratorStore()
 
+  // Metal material — stable, recreated only on model change
+  const metalMat = useMemo(() => makeMetalMat(), [])
+
   // Build materials from store — new objects ogni volta che cambia upholsteryId
   const { upholsteryMat, stitchMat } = useMemo(() => {
     const m = UPHOLSTERY_MATERIALS.find(x => x.id === upholsteryId) || UPHOLSTERY_MATERIALS[0]
@@ -342,7 +341,7 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
         const mesh = child as THREE.Mesh
         const n = normalizeMeshName(child.name)
 
-        if (isMetalMesh(mesh.name)) mesh.material = METAL_MAT
+        if (isMetalMesh(mesh.name)) mesh.material = metalMat
         if (rotatingName && n === rotatingName) rotatingMesh = child
         if (hitName && n === hitName) hitMesh = child
 
@@ -364,7 +363,7 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
       setRotatingBody(null)
       setSeatObjects(null, null)
     }
-  }, [scene, modelId])
+  }, [scene, modelId, metalMat])
 
   // Apply material and visibility
   useEffect(() => {
@@ -449,12 +448,12 @@ function CaptureHandler() {
 function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }) {
   return (
     <>
-      <color attach="background" args={['#0d131f']} />
-      <fog attach="fog" args={['#0d131f', 10, 25]} />
+      <color attach="background" args={['#ffffff']} />
+      <fog attach="fog" args={['#ffffff', 10, 25]} />
 
       <StudioSetup />
 
-      <Environment files="/hdr-ambiente.exr" environmentIntensity={1.0} background={false} />
+      <Environment files="/hdr-ambiente.exr" environmentIntensity={4.0} background={false} />
 
       <StoolModel glbPath={glbPath} modelId={modelId} />
       <StoolInteraction modelId={modelId} />
@@ -466,7 +465,7 @@ function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }
         scale={10}
         blur={3}
         far={4}
-        color="#0a1628"
+        color="#1a1a1a"
       />
     </>
   )
@@ -491,7 +490,7 @@ export default function ConfiguratorScene({ glbPath, modelId }: { glbPath: strin
         toneMappingExposure: 0.9,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
-      style={{ background: '#0d131f' }}
+      style={{ background: '#ffffff' }}
     >
       <SceneContent glbPath={glbPath} modelId={modelId} />
     </Canvas>

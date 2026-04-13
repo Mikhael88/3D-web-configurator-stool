@@ -37,7 +37,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
       style={{
         zIndex: 40,
         background: THEME.bgSidebar,
-        borderTop: `1px solid ${THEME.borderSubtle}`,
+        borderTop: `1px solid ${THEME.borderSageSubtle}`,
         boxShadow: THEME.shadowSheet,
         height: '55vh',
         transform: expanded ? 'translateY(0)' : 'translateY(calc(100% - 48px))',
@@ -62,7 +62,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
             width: 36,
             height: 4,
             borderRadius: 2,
-            background: THEME.borderMid,
+            background: THEME.borderSageMid,
           }}
         />
       </div>
@@ -86,7 +86,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
               fontSize: '0.6rem',
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: THEME.textMuted,
+              color: THEME.textOnSageMuted,
               marginBottom: 8,
               fontFamily: "'Manrope', sans-serif",
             }}
@@ -99,12 +99,12 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
               style={{
                 flex: 1,
                 padding: '12px 0',
-                border: `1px solid ${THEME.borderMid}`,
+                border: `1px solid ${THEME.borderSageMid}`,
                 background: THEME.bgInput,
                 fontSize: '0.6rem',
                 letterSpacing: '0.08em',
                 fontWeight: 700,
-                color: THEME.textPrimary,
+                color: THEME.textOnSage,
                 cursor: 'pointer',
                 fontFamily: "'Manrope', sans-serif",
               }}
@@ -116,12 +116,12 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
               style={{
                 flex: 1,
                 padding: '12px 0',
-                border: `1px solid ${THEME.borderMid}`,
+                border: `1px solid ${THEME.borderSageMid}`,
                 background: THEME.bgInput,
                 fontSize: '0.6rem',
                 letterSpacing: '0.08em',
                 fontWeight: 700,
-                color: THEME.textPrimary,
+                color: THEME.textOnSage,
                 cursor: 'pointer',
                 fontFamily: "'Manrope', sans-serif",
               }}
@@ -155,11 +155,11 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
             style={{
               flex: 1,
               padding: '12px 0',
-              border: `1px solid ${THEME.borderMid}`,
+              border: `1px solid ${THEME.borderSageMid}`,
               background: 'transparent',
               fontSize: '0.6rem',
               letterSpacing: '0.2em',
-              color: THEME.textPrimary,
+              color: THEME.textOnSage,
               cursor: 'pointer',
               fontFamily: "'Manrope', sans-serif",
             }}
@@ -169,13 +169,13 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
         </div>
 
         {/* Description */}
-        <div style={{ borderTop: `1px solid ${THEME.borderSubtle}`, paddingTop: 14 }}>
+        <div style={{ borderTop: `1px solid ${THEME.borderSageSubtle}`, paddingTop: 14 }}>
           <div
             style={{
               fontSize: '0.55rem',
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: THEME.textMuted,
+              color: THEME.textOnSageMuted,
               marginBottom: 8,
               fontFamily: "'Manrope', sans-serif",
             }}
@@ -186,7 +186,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
             style={{
               fontSize: '0.75rem',
               lineHeight: 1.6,
-              color: THEME.textSecondary,
+              color: THEME.textOnSage,
               margin: 0,
               fontFamily: "'Manrope', sans-serif",
             }}

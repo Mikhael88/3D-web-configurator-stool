@@ -9,22 +9,22 @@ export interface ModelConfig {
 export const MODELS: ModelConfig[] = [
   {
     id: 'c111',
-    name: 'C111',
+    name: 'Maya',
     glbPath: '/C111.glb',
   },
   {
     id: 'c112',
-    name: 'C112',
+    name: 'Zemira',
     glbPath: '/C112.glb',
   },
   {
     id: 'c113',
-    name: 'C113',
+    name: 'Vittoria',
     glbPath: '/C113.glb',
   },
   {
     id: 'c114',
-    name: 'C114',
+    name: 'Isabel',
     glbPath: '/C114.glb',
   },
 ]

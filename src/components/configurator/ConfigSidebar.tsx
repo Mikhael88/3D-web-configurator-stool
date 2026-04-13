@@ -9,6 +9,7 @@ import {
 } from '@/stores/configurator-store'
 import { generatePdf } from '@/lib/generate-pdf'
 import { THEME } from '@/lib/theme'
+import { MODELS } from '@/models'
 
 function MaterialSwatch({
   material,
@@ -24,9 +25,9 @@ function MaterialSwatch({
       onClick={onClick}
       className="aspect-square rounded-full border-2 transition-all duration-300 hover:scale-105"
       style={{
-        borderColor: isSelected ? THEME.accentNavy : THEME.borderMid,
+        borderColor: isSelected ? THEME.accentNavy : THEME.borderSageMid,
         backgroundColor: material.color,
-        boxShadow: isSelected ? `0 0 0 4px ${THEME.accentSelected}` : 'none',
+        boxShadow: isSelected ? `0 0 0 4px ${THEME.accentSelectedOnSage}` : 'none',
       }}
       title={material.name}
     />
@@ -37,7 +38,7 @@ function SubCategoryLabel({ label }: { label: string }) {
   return (
     <div
       className="text-[10px] uppercase tracking-[0.2em] font-medium"
-      style={{ color: THEME.textMuted }}
+      style={{ color: THEME.textOnSageMuted }}
     >
       {label}
     </div>
@@ -49,6 +50,7 @@ export default function ConfigSidebar() {
   const [isGenerating, setIsGenerating] = useState(false)
   const params = useParams()
   const modelId = (params?.model as string) ?? 'c111'
+  const modelName = MODELS.find(m => m.id === modelId)?.name ?? modelId.toUpperCase()
 
   const handleSavePdf = async () => {
     setIsGenerating(true)
@@ -68,20 +70,20 @@ export default function ConfigSidebar() {
       className="w-[420px] max-lg:hidden flex flex-col relative z-30 shadow-2xl overflow-hidden"
       style={{
         backgroundColor: THEME.bgSidebar,
-        borderLeft: `1px solid ${THEME.borderSubtle}`,
+        borderLeft: `1px solid ${THEME.borderSageSubtle}`,
       }}
     >
       {/* Product Header */}
       <div className="p-8 pb-6">
         <h1
           className="text-4xl lg:text-5xl leading-tight"
-          style={{ fontFamily: "'Noto Serif', serif", color: THEME.textPrimary }}
+          style={{ fontFamily: "'Noto Serif', serif", color: THEME.textOnSage }}
         >
-          {modelId.toUpperCase()}
+          {modelName}
         </h1>
         <p
           className="text-sm mt-5 leading-relaxed font-light max-w-sm"
-          style={{ color: THEME.textSecondary, fontFamily: "'Manrope', sans-serif" }}
+          style={{ color: THEME.textOnSage, fontFamily: "'Manrope', sans-serif" }}
         >
           A masterpiece of nautical engineering. Crafted with high-grade marine alloys
           and weather-resistant textiles designed to withstand the harshest ocean environments.
@@ -96,13 +98,13 @@ export default function ConfigSidebar() {
           <div className="flex justify-between items-end mb-5">
             <h3
               className="text-[11px] uppercase tracking-[0.2em] font-bold"
-              style={{ color: THEME.textMuted }}
+              style={{ color: THEME.textOnSageMuted }}
             >
               Seat &amp; Backrest
             </h3>
             <span
               className="text-[10px] uppercase tracking-widest"
-              style={{ color: THEME.accentSlate }}
+              style={{ color: THEME.textOnSage }}
             >
               {currentUpholstery?.name}
             </span>
@@ -141,7 +143,7 @@ export default function ConfigSidebar() {
         <section>
           <h3
             className="text-[11px] uppercase tracking-[0.2em] font-bold mb-5"
-            style={{ color: THEME.textMuted }}
+            style={{ color: THEME.textOnSageMuted }}
           >
             Structure Finish
           </h3>
@@ -149,7 +151,7 @@ export default function ConfigSidebar() {
             <div
               className="flex items-center justify-between p-4"
               style={{
-                border: `1px solid ${THEME.borderMid}`,
+                border: `1px solid ${THEME.borderSageMid}`,
                 backgroundColor: THEME.bgInput,
               }}
             >
@@ -157,12 +159,12 @@ export default function ConfigSidebar() {
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: THEME.accentNavy }} />
                 <span
                   className="text-xs uppercase tracking-widest font-medium"
-                  style={{ color: THEME.textPrimary }}
+                  style={{ color: THEME.textOnSage }}
                 >
                   Brushed Steel 316
                 </span>
               </div>
-              <span className="text-[10px]" style={{ color: THEME.textMuted }}>Included</span>
+              <span className="text-[10px]" style={{ color: THEME.textOnSageMuted }}>Included</span>
             </div>
           </div>
         </section>
@@ -173,7 +175,7 @@ export default function ConfigSidebar() {
       <div
         className="p-8 pt-6"
         style={{
-          borderTop: `1px solid ${THEME.borderSubtle}`,
+          borderTop: `1px solid ${THEME.borderSageSubtle}`,
           backgroundColor: THEME.bgSidebar,
         }}
       >
@@ -208,8 +210,8 @@ export default function ConfigSidebar() {
           <button
             className="py-4 flex items-center justify-center gap-2 text-xs uppercase tracking-[0.3em] font-medium transition-all duration-300"
             style={{
-              border: `1px solid ${THEME.borderMid}`,
-              color: THEME.textPrimary,
+              border: `1px solid ${THEME.borderSageMid}`,
+              color: THEME.textOnSage,
               backgroundColor: 'transparent',
             }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = THEME.bgInput)}
