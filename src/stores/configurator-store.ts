@@ -10,6 +10,8 @@ export interface MaterialOption {
   colorHex: string
   roughness: number
   metalness: number
+  texturePath?: string
+  normalPath?: string
 }
 
 export interface ConfiguratorState {
@@ -26,12 +28,12 @@ export const UPHOLSTERY_MATERIALS: MaterialOption[] = [
   { id: 'charcoal-fabric', name: 'Charcoal',      category: 'fabric',  color: '#3a3a3e', colorHex: '#3a3a3e', roughness: 0.25, metalness: 0.0 },
   { id: 'ivory-fabric',    name: 'Ivory Linen',   category: 'fabric',  color: '#e8e0d4', colorHex: '#e8e0d4', roughness: 0.40, metalness: 0.0 },
   { id: 'ocean-fabric',    name: 'Ocean Blue',    category: 'fabric',  color: '#4a6fa5', colorHex: '#4a6fa5', roughness: 0.30, metalness: 0.0 },
-  // Leathers (5)
-  { id: 'cognac-leather',   name: 'Cognac',       category: 'leather', color: '#8b4513', colorHex: '#8b4513', roughness: 0.45, metalness: 0.0 },
-  { id: 'black-leather',    name: 'Black',        category: 'leather', color: '#1a1a1a', colorHex: '#1a1a1a', roughness: 0.35, metalness: 0.0 },
-  { id: 'tan-leather',      name: 'Natural Tan',  category: 'leather', color: '#c4956a', colorHex: '#c4956a', roughness: 0.60, metalness: 0.0 },
-  { id: 'burgundy-leather', name: 'Burgundy',     category: 'leather', color: '#5c1a1a', colorHex: '#5c1a1a', roughness: 0.58, metalness: 0.0 },
-  { id: 'blanc-leather',    name: 'Blanc',        category: 'leather', color: '#f0ece6', colorHex: '#f0ece6', roughness: 0.50, metalness: 0.0 },
+  // Leathers (5) — Clun textured
+  { id: 'clun-280', name: 'Clun 280', category: 'leather', color: '#7a5c40', colorHex: '#7a5c40', roughness: 0.55, metalness: 0.0, texturePath: '/textures/leather/clun-280-tileable-diffuse.png', normalPath: '/textures/leather/clun-tileable-nornal.png' },
+  { id: 'clun-284', name: 'Clun 284', category: 'leather', color: '#3d2b1f', colorHex: '#3d2b1f', roughness: 0.50, metalness: 0.0, texturePath: '/textures/leather/clun-284-tileable-diffuse.png', normalPath: '/textures/leather/clun-tileable-nornal.png' },
+  { id: 'clun-287', name: 'Clun 287', category: 'leather', color: '#b08060', colorHex: '#b08060', roughness: 0.55, metalness: 0.0, texturePath: '/textures/leather/clun-287-tileable-diffuse.png', normalPath: '/textures/leather/clun-tileable-nornal.png' },
+  { id: 'clun-289', name: 'Clun 289', category: 'leather', color: '#d4b898', colorHex: '#d4b898', roughness: 0.55, metalness: 0.0, texturePath: '/textures/leather/clun-289-tileable-diffuse.png', normalPath: '/textures/leather/clun-tileable-nornal.png' },
+  { id: 'clun-291', name: 'Clun 291', category: 'leather', color: '#1e1410', colorHex: '#1e1410', roughness: 0.50, metalness: 0.0, texturePath: '/textures/leather/clun-291-tileable-diffuse.png', normalPath: '/textures/leather/clun-tileable-nornal.png' },
 ]
 
 export const useConfiguratorStore = create<ConfiguratorState>((set) => ({

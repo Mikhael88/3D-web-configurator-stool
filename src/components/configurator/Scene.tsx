@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useMemo, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useGLTF, Environment, ContactShadows, OrbitControls } from '@react-three/drei'
+import { useGLTF, useTexture, Environment, ContactShadows, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { useConfiguratorStore, UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
 import { setCaptureViews } from '@/lib/capture-ref'
@@ -26,25 +26,38 @@ function makeMetalMat() {
   })
 }
 
+
 // Strip Three.js duplicate-node suffix (e.g. "tessuto.001" → "tessuto")
 function normalizeMeshName(name: string): string {
   return name.toLowerCase().replace(/\.\d+$/, '')
 }
 
-function isUpholsteryMesh(name: string): boolean {
-  const n = normalizeMeshName(name)
-  return n === 'tessuto' || n.includes('-tessuto')
+function matName(mesh: THREE.Mesh): string {
+  const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material
+  return normalizeMeshName(mat?.name ?? '')
 }
 
-function isStitchMesh(name: string): boolean {
-  const n = normalizeMeshName(name)
-  return n === 'cuciture' || n.includes('-cuciture')
+// Nodes whose name doesn't end in -tessuto but carry the upholstery material
+const UPHOLSTERY_NODE_NAMES = new Set(['c114-seduta-acciaio'])
+
+function isUpholsteryMesh(mesh: THREE.Mesh): boolean {
+  const n = normalizeMeshName(mesh.name)
+  if (n === 'tessuto' || n.includes('-tessuto')) return true
+  if (UPHOLSTERY_NODE_NAMES.has(n)) return true
+  return matName(mesh).includes('tessuto')
+}
+
+function isStitchMesh(mesh: THREE.Mesh): boolean {
+  const n = normalizeMeshName(mesh.name)
+  if (n === 'cuciture' || n.includes('-cuciture')) return true
+  return matName(mesh).includes('cuciture')
 }
 
 function isMetalMesh(name: string): boolean {
   const n = normalizeMeshName(name)
   return n === 'metallo' || n.includes('-metallo')
 }
+
 
 // Stitch color: slightly lighter for dark materials, slightly darker for light ones
 function deriveStitchColor(baseHex: string): THREE.Color {
@@ -297,25 +310,66 @@ function StoolInteraction({ modelId }: { modelId: string }) {
 }
 
 // ──────────────────────────────────────
+// Leather texture paths — all in one array: [d0..d4, normal]
+// ──────────────────────────────────────
+const LEATHER_MAT_IDS = UPHOLSTERY_MATERIALS
+  .filter(m => m.texturePath)
+  .map(m => m.id)
+
+const ALL_LEATHER_PATHS = [
+  ...UPHOLSTERY_MATERIALS.filter(m => m.texturePath).map(m => m.texturePath!),
+  '/textures/leather/clun-tileable-nornal.png',
+]
+
+// ──────────────────────────────────────
 // Stool Model
 // ──────────────────────────────────────
 function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) {
   const { scene } = useGLTF(glbPath)
   const { upholsteryId } = useConfiguratorStore()
 
-  // Metal material — stable, recreated only on model change
+  // Single useTexture call: all 5 diffuse + shared normal (last entry)
+  const allLeatherTextures = useTexture(ALL_LEATHER_PATHS) as THREE.Texture[]
+
+  // Static materials — stable, recreated only on model change
   const metalMat = useMemo(() => makeMetalMat(), [])
 
   // Build materials from store — new objects ogni volta che cambia upholsteryId
   const { upholsteryMat, stitchMat } = useMemo(() => {
     const m = UPHOLSTERY_MATERIALS.find(x => x.id === upholsteryId) || UPHOLSTERY_MATERIALS[0]
-    return {
-      upholsteryMat: new THREE.MeshStandardMaterial({
+
+    let upholsteryMat: THREE.MeshStandardMaterial
+    if (m.texturePath) {
+      const idx = LEATHER_MAT_IDS.indexOf(m.id)
+      const diffuse = allLeatherTextures[idx]
+      const normal = allLeatherTextures[allLeatherTextures.length - 1]
+
+      // Configure texture params synchronously before material creation
+      diffuse.wrapS = diffuse.wrapT = THREE.RepeatWrapping
+      diffuse.repeat.set(3, 3)
+      diffuse.colorSpace = THREE.SRGBColorSpace
+      diffuse.needsUpdate = true
+      normal.wrapS = normal.wrapT = THREE.RepeatWrapping
+      normal.repeat.set(3, 3)
+
+      upholsteryMat = new THREE.MeshStandardMaterial({
+        map: diffuse,
+        normalMap: normal,
+        roughness: m.roughness,
+        metalness: m.metalness,
+        envMapIntensity: 1.2,
+      })
+    } else {
+      upholsteryMat = new THREE.MeshStandardMaterial({
         color: new THREE.Color(m.colorHex),
         roughness: m.roughness,
         metalness: m.metalness,
         envMapIntensity: 1.0,
-      }),
+      })
+    }
+
+    return {
+      upholsteryMat,
       stitchMat: new THREE.MeshStandardMaterial({
         color: deriveStitchColor(m.colorHex),
         roughness: Math.min(0.95, m.roughness + 0.1),
@@ -323,7 +377,7 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
         envMapIntensity: 0.5,
       }),
     }
-  }, [upholsteryId])
+  }, [upholsteryId, allLeatherTextures])
 
   // First load: register refs, enable shadows, apply static materials
   useEffect(() => {
@@ -372,7 +426,7 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
       if (!mesh.isMesh) return
 
       // Upholstery mesh
-      if (isUpholsteryMesh(mesh.name)) {
+      if (isUpholsteryMesh(mesh)) {
         if (Array.isArray(mesh.material)) {
           mesh.material = mesh.material.map(() => upholsteryMat)
         } else {
@@ -384,7 +438,7 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
       }
 
       // Stitch mesh — derived color from upholstery
-      if (isStitchMesh(mesh.name)) {
+      if (isStitchMesh(mesh)) {
         if (Array.isArray(mesh.material)) {
           mesh.material = mesh.material.map(() => stitchMat)
         } else {
@@ -453,7 +507,7 @@ function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }
 
       <StudioSetup />
 
-      <Environment files="/hdr-ambiente.exr" environmentIntensity={4.0} background={false} />
+      <Environment files="/hdr-ambiente.exr" environmentIntensity={2.5} background={false} />
 
       <StoolModel glbPath={glbPath} modelId={modelId} />
       <StoolInteraction modelId={modelId} />

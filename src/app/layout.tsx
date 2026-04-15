@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Atelier Maritime — 3D Configurator",
-  description: "Luxury yacht bar stool configurator. Crafted with high-grade marine alloys and weather-resistant textiles.",
+  title: "IAM - Configuratore 3D",
+  description: "Configuratore 3D per sgabelli da yacht di lusso. Realizzato con leghe marine di alta qualità e tessuti resistenti agli agenti atmosferici.",
 };
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="it" suppressHydrationWarning>
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Manrope:wght@200..800&display=swap"

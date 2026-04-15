@@ -91,7 +91,7 @@ export default function MaterialTray({ category, onClose }: Props) {
           {materials.map(mat => (
             <button
               key={mat.id}
-              onClick={() => { setUpholstery(mat.id); onClose() }}
+              onClick={() => setUpholstery(mat.id)}
               style={{
                 width: 44,
                 height: 44,

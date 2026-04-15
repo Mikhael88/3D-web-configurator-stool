@@ -1,26 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useConfiguratorStore } from '@/stores/configurator-store'
+import { useConfiguratorStore, UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
 import { generatePdf } from '@/lib/generate-pdf'
 import { THEME } from '@/lib/theme'
+import { MODELS } from '@/models'
 
 interface Props {
   modelId: string
-  onOpenTray: (category: 'fabric' | 'leather') => void
+  expanded: boolean
+  onToggle: () => void
+  onCollapse: () => void
 }
 
-const DESCRIPTION = 'A masterpiece of nautical engineering. Crafted with high-grade marine alloys and weather-resistant textiles designed to withstand the harshest ocean environments.'
-
-export default function BottomSheet({ modelId, onOpenTray }: Props) {
-  const { upholsteryId, isInteracting } = useConfiguratorStore()
-  const [expanded, setExpanded] = useState(true)
+export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }: Props) {
+  const { upholsteryId, setUpholstery, isInteracting } = useConfiguratorStore()
+  const description = MODELS.find(m => m.id === modelId)?.description ?? ''
+  const [activeCategory, setActiveCategory] = useState<'fabric' | 'leather' | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
   // Auto-collapse while user drags the model
   useEffect(() => {
-    if (isInteracting) setExpanded(false)
-  }, [isInteracting])
+    if (isInteracting) onCollapse()
+  }, [isInteracting, onCollapse])
 
   const handleSavePdf = async () => {
     setIsGenerating(true)
@@ -31,6 +33,15 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
     }
   }
 
+  const toggleCategory = (cat: 'fabric' | 'leather') => {
+    setActiveCategory(prev => prev === cat ? null : cat)
+  }
+
+  const fabrics = UPHOLSTERY_MATERIALS.filter(m => m.category === 'fabric')
+  const leathers = UPHOLSTERY_MATERIALS.filter(m => m.category === 'leather')
+  const visibleSwatches = activeCategory === 'fabric' ? fabrics : activeCategory === 'leather' ? leathers : []
+  const currentUpholstery = UPHOLSTERY_MATERIALS.find(m => m.id === upholsteryId)
+
   return (
     <div
       className="lg:hidden fixed bottom-0 left-0 right-0 flex flex-col"
@@ -39,7 +50,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
         background: THEME.bgSidebar,
         borderTop: `1px solid ${THEME.borderSageSubtle}`,
         boxShadow: THEME.shadowSheet,
-        height: '55vh',
+        height: '40vh',
         transform: expanded ? 'translateY(0)' : 'translateY(calc(100% - 48px))',
         transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
       }}
@@ -47,8 +58,8 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
       {/* Drag handle — tap to toggle */}
       <div
         role="button"
-        aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
-        onClick={() => setExpanded(e => !e)}
+        aria-label={expanded ? 'Comprimi pannello' : 'Espandi pannello'}
+        onClick={onToggle}
         style={{
           display: 'flex',
           justifyContent: 'center',
@@ -75,59 +86,124 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          gap: 16,
+          gap: 12,
           paddingBottom: 24,
         }}
       >
-        {/* Material buttons */}
+        {/* Material section */}
         <div>
-          <div
-            style={{
-              fontSize: '0.6rem',
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: THEME.textOnSageMuted,
-              marginBottom: 8,
-              fontFamily: "'Manrope', sans-serif",
-            }}
-          >
-            Seat &amp; Backrest
+          {/* Label row with current selection */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+          }}>
+            <div
+              style={{
+                fontSize: '0.6rem',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: THEME.textOnSageMuted,
+                fontFamily: "'Manrope', sans-serif",
+              }}
+            >
+              Seduta e schienale
+            </div>
+            {currentUpholstery && (
+              <div style={{
+                fontSize: '0.6rem',
+                letterSpacing: '0.08em',
+                color: THEME.textOnSage,
+                fontFamily: "'Manrope', sans-serif",
+              }}>
+                {currentUpholstery.name}
+              </div>
+            )}
           </div>
+
+          {/* Category toggle buttons */}
           <div style={{ display: 'flex', gap: 8 }}>
             <button
-              onClick={() => { setExpanded(true); onOpenTray('fabric') }}
+              onClick={() => toggleCategory('fabric')}
               style={{
                 flex: 1,
-                padding: '12px 0',
-                border: `1px solid ${THEME.borderSageMid}`,
-                background: THEME.bgInput,
+                padding: '10px 0',
+                border: `1px solid ${activeCategory === 'fabric' ? THEME.accentNavy : THEME.borderSageMid}`,
+                background: activeCategory === 'fabric' ? THEME.accentNavy : THEME.bgInput,
                 fontSize: '0.6rem',
                 letterSpacing: '0.08em',
                 fontWeight: 700,
-                color: THEME.textOnSage,
+                color: activeCategory === 'fabric' ? THEME.textInverse : THEME.textOnSage,
                 cursor: 'pointer',
                 fontFamily: "'Manrope', sans-serif",
+                transition: 'all 0.2s ease',
               }}
             >
-              FABRIC ▲
+              TESSUTO {activeCategory === 'fabric' ? '▼' : '▲'}
             </button>
             <button
-              onClick={() => { setExpanded(true); onOpenTray('leather') }}
+              onClick={() => toggleCategory('leather')}
               style={{
                 flex: 1,
-                padding: '12px 0',
-                border: `1px solid ${THEME.borderSageMid}`,
-                background: THEME.bgInput,
+                padding: '10px 0',
+                border: `1px solid ${activeCategory === 'leather' ? THEME.accentNavy : THEME.borderSageMid}`,
+                background: activeCategory === 'leather' ? THEME.accentNavy : THEME.bgInput,
                 fontSize: '0.6rem',
                 letterSpacing: '0.08em',
                 fontWeight: 700,
-                color: THEME.textOnSage,
+                color: activeCategory === 'leather' ? THEME.textInverse : THEME.textOnSage,
                 cursor: 'pointer',
                 fontFamily: "'Manrope', sans-serif",
+                transition: 'all 0.2s ease',
               }}
             >
-              LEATHER ▲
+              PELLE {activeCategory === 'leather' ? '▼' : '▲'}
             </button>
+          </div>
+
+          {/* Inline swatches — slide open/closed */}
+          <div
+            style={{
+              maxHeight: activeCategory ? '72px' : '0',
+              overflow: 'hidden',
+              transition: 'max-height 0.25s ease',
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              paddingTop: 12,
+              paddingBottom: 4,
+              justifyContent: 'center',
+            }}>
+              {visibleSwatches.map(mat => (
+                <button
+                  key={mat.id}
+                  onClick={() => setUpholstery(mat.id)}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    backgroundColor: mat.texturePath ? undefined : mat.color,
+                    backgroundImage: mat.texturePath ? `url(${mat.texturePath})` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    border: upholsteryId === mat.id
+                      ? `3px solid ${THEME.accentNavy}`
+                      : `2px solid ${THEME.borderSageMid}`,
+                    boxShadow: upholsteryId === mat.id
+                      ? `0 0 0 3px ${THEME.accentSelectedOnSage}`
+                      : 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    transition: 'transform 0.15s ease',
+                    flexShrink: 0,
+                  }}
+                  title={mat.name}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -149,7 +225,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
               fontFamily: "'Manrope', sans-serif",
             }}
           >
-            {isGenerating ? 'Generating…' : 'SAVE PDF'}
+            {isGenerating ? 'Generazione…' : 'SALVA PDF'}
           </button>
           <button
             style={{
@@ -164,7 +240,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
               fontFamily: "'Manrope', sans-serif",
             }}
           >
-            CONTACT
+            CONTATTO
           </button>
         </div>
 
@@ -180,7 +256,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
               fontFamily: "'Manrope', sans-serif",
             }}
           >
-            About
+            Descrizione
           </div>
           <p
             style={{
@@ -191,7 +267,7 @@ export default function BottomSheet({ modelId, onOpenTray }: Props) {
               fontFamily: "'Manrope', sans-serif",
             }}
           >
-            {DESCRIPTION}
+            {description}
           </p>
         </div>
       </div>

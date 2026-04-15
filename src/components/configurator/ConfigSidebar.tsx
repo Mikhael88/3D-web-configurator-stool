@@ -26,7 +26,10 @@ function MaterialSwatch({
       className="aspect-square rounded-full border-2 transition-all duration-300 hover:scale-105"
       style={{
         borderColor: isSelected ? THEME.accentNavy : THEME.borderSageMid,
-        backgroundColor: material.color,
+        backgroundColor: material.texturePath ? undefined : material.color,
+        backgroundImage: material.texturePath ? `url(${material.texturePath})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         boxShadow: isSelected ? `0 0 0 4px ${THEME.accentSelectedOnSage}` : 'none',
       }}
       title={material.name}
@@ -50,7 +53,8 @@ export default function ConfigSidebar() {
   const [isGenerating, setIsGenerating] = useState(false)
   const params = useParams()
   const modelId = (params?.model as string) ?? 'c111'
-  const modelName = MODELS.find(m => m.id === modelId)?.name ?? modelId.toUpperCase()
+  const modelConfig = MODELS.find(m => m.id === modelId)
+  const modelName = modelConfig?.name ?? modelId.toUpperCase()
 
   const handleSavePdf = async () => {
     setIsGenerating(true)
@@ -85,8 +89,7 @@ export default function ConfigSidebar() {
           className="text-sm mt-5 leading-relaxed font-light max-w-sm"
           style={{ color: THEME.textOnSage, fontFamily: "'Manrope', sans-serif" }}
         >
-          A masterpiece of nautical engineering. Crafted with high-grade marine alloys
-          and weather-resistant textiles designed to withstand the harshest ocean environments.
+          {modelConfig?.description ?? ''}
         </p>
       </div>
 
@@ -100,7 +103,7 @@ export default function ConfigSidebar() {
               className="text-[11px] uppercase tracking-[0.2em] font-bold"
               style={{ color: THEME.textOnSageMuted }}
             >
-              Seat &amp; Backrest
+              Seduta e schienale
             </h3>
             <span
               className="text-[10px] uppercase tracking-widest"
@@ -111,7 +114,7 @@ export default function ConfigSidebar() {
           </div>
 
           <div className="mb-5">
-            <SubCategoryLabel label="Fabrics" />
+            <SubCategoryLabel label="Tessuti" />
             <div className="grid grid-cols-5 gap-3 mt-3">
               {fabrics.map(mat => (
                 <MaterialSwatch
@@ -125,7 +128,7 @@ export default function ConfigSidebar() {
           </div>
 
           <div>
-            <SubCategoryLabel label="Leathers" />
+            <SubCategoryLabel label="Pelli" />
             <div className="grid grid-cols-5 gap-3 mt-3">
               {leathers.map(mat => (
                 <MaterialSwatch
@@ -145,7 +148,7 @@ export default function ConfigSidebar() {
             className="text-[11px] uppercase tracking-[0.2em] font-bold mb-5"
             style={{ color: THEME.textOnSageMuted }}
           >
-            Structure Finish
+            Finitura struttura
           </h3>
           <div className="space-y-3">
             <div
@@ -161,10 +164,10 @@ export default function ConfigSidebar() {
                   className="text-xs uppercase tracking-widest font-medium"
                   style={{ color: THEME.textOnSage }}
                 >
-                  Brushed Steel 316
+                  Acciaio inox 316L
                 </span>
               </div>
-              <span className="text-[10px]" style={{ color: THEME.textOnSageMuted }}>Included</span>
+              <span className="text-[10px]" style={{ color: THEME.textOnSageMuted }}>Incluso</span>
             </div>
           </div>
         </section>
@@ -192,7 +195,7 @@ export default function ConfigSidebar() {
             }}
           >
             {isGenerating ? (
-              <span>Generating…</span>
+              <span>Generazione…</span>
             ) : (
               <>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -201,7 +204,7 @@ export default function ConfigSidebar() {
                   <line x1="12" y1="11" x2="12" y2="17" />
                   <polyline points="9 14 12 17 15 14" />
                 </svg>
-                Save PDF
+                Salva PDF
               </>
             )}
           </button>
@@ -221,7 +224,7 @@ export default function ConfigSidebar() {
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
               <polyline points="22,6 12,13 2,6" />
             </svg>
-            Contact
+            Contatto
           </button>
         </div>
       </div>

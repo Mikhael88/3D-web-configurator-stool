@@ -4,9 +4,11 @@ import path from 'path'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const glbPath = path.join(process.cwd(), 'public', 'stool.glb')
+    const { searchParams } = new URL(request.url)
+    const file = searchParams.get('file') ?? 'stool.glb'
+    const glbPath = path.join(process.cwd(), 'public', file)
     const buffer = await fs.readFile(glbPath)
 
     // GLB: 12-byte header

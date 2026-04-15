@@ -34,14 +34,29 @@ function ProductCard({ model }: { model: ModelConfig }) {
         className="flex-1 relative flex items-center justify-center overflow-hidden"
         style={{ background: THEME.bgCardImage, minHeight: '160px' }}
       >
-        <div style={{ opacity: 0.2 }}>
-          <svg width="56" height="80" viewBox="0 0 56 80" fill="none">
-            <rect x="10" y="6" width="36" height="14" rx="2" fill={THEME.accentNavy}/>
-            <rect x="22" y="20" width="12" height="38" rx="1" fill={THEME.accentSlate}/>
-            <ellipse cx="28" cy="62" rx="20" ry="5" fill={THEME.accentSand}/>
-            <rect x="8" y="66" width="40" height="6" rx="1" fill={THEME.accentNavy}/>
-          </svg>
-        </div>
+        {model.imagePath ? (
+          <img
+            src={model.imagePath}
+            alt={model.name}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center 15%',
+            }}
+          />
+        ) : (
+          <div style={{ opacity: 0.2 }}>
+            <svg width="56" height="80" viewBox="0 0 56 80" fill="none">
+              <rect x="10" y="6" width="36" height="14" rx="2" fill={THEME.accentNavy}/>
+              <rect x="22" y="20" width="12" height="38" rx="1" fill={THEME.accentSlate}/>
+              <ellipse cx="28" cy="62" rx="20" ry="5" fill={THEME.accentSand}/>
+              <rect x="8" y="66" width="40" height="6" rx="1" fill={THEME.accentNavy}/>
+            </svg>
+          </div>
+        )}
 
         {/* Coming Soon overlay */}
         {!isReady && showCS && (
@@ -59,7 +74,7 @@ function ProductCard({ model }: { model: ModelConfig }) {
                 fontFamily: "'Manrope', sans-serif",
               }}
             >
-              Coming Soon
+              Prossimamente
             </span>
             <div style={{ width: 24, height: 1, background: THEME.borderMid }} />
           </div>
@@ -96,7 +111,7 @@ function ProductCard({ model }: { model: ModelConfig }) {
               fontFamily: "'Manrope', sans-serif",
             }}
           >
-            Configure →
+            Configura →
           </span>
         )}
       </div>
@@ -144,7 +159,7 @@ export default function Home() {
             fontFamily: "'Manrope', sans-serif",
           }}
         >
-          Select a model to begin configuration
+          Seleziona un modello per iniziare la configurazione
         </span>
       </div>
     </div>

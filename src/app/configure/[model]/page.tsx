@@ -6,7 +6,6 @@ import { notFound } from 'next/navigation'
 import { useConfiguratorStore } from '@/stores/configurator-store'
 import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
-import MaterialTray from '@/components/configurator/MaterialTray'
 import { MODELS } from '@/models'
 import { THEME } from '@/lib/theme'
 
@@ -22,7 +21,7 @@ const ConfiguratorScene = dynamic(
             style={{ borderColor: '#728473', borderTopColor: 'transparent' }}
           />
           <span className="text-xs uppercase tracking-[0.3em]" style={{ color: '#728473' }}>
-            Loading 3D Scene
+            Caricamento scena 3D
           </span>
         </div>
       </div>
@@ -57,7 +56,7 @@ export default function ConfiguratorPage({
   const { model: modelId } = use(params)
   const modelConfig = MODELS.find(m => m.id === modelId)
   const setInteracting = useConfiguratorStore(s => s.setInteracting)
-  const [activeTray, setActiveTray] = useState<'fabric' | 'leather' | null>(null)
+  const [sheetExpanded, setSheetExpanded] = useState(true)
 
   if (!modelConfig?.glbPath) notFound()
 
@@ -69,19 +68,11 @@ export default function ConfiguratorPage({
       <main className="flex flex-1 overflow-hidden">
         {/* 3D Viewport */}
         <section
-          className="flex-1 relative"
+          className={`flex-1 relative canvas-section${sheetExpanded ? ' sheet-open' : ''}`}
           onPointerDown={() => setInteracting(true)}
           onPointerUp={() => setInteracting(false)}
           onPointerCancel={() => setInteracting(false)}
         >
-          {/* Bottom gradient — aids canvas readability at the fold */}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-32 z-10 pointer-events-none"
-            style={{
-              background: 'linear-gradient(180deg, transparent 0%, rgba(13,19,31,0.6) 100%)',
-            }}
-          />
-
           {/* 3D Canvas */}
           <Suspense fallback={<LoadingScreen />}>
             <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} />
@@ -98,7 +89,7 @@ export default function ConfiguratorPage({
                 className="text-[10px] uppercase tracking-[0.2em]"
                 style={{ color: '#728473', fontFamily: "'Manrope', sans-serif" }}
               >
-                Orbit &amp; Pan
+                Orbita e panoramica
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -110,13 +101,13 @@ export default function ConfiguratorPage({
                 className="text-[10px] uppercase tracking-[0.2em]"
                 style={{ color: '#728473', fontFamily: "'Manrope', sans-serif" }}
               >
-                Click Stool to Swivel
+                Clicca per ruotare
               </span>
             </div>
           </div>
 
           {/* Product name overlay — mobile only */}
-          <div className="absolute top-3 left-4 z-20 lg:hidden">
+          <div className="absolute top-3 right-4 z-20 lg:hidden">
             <span
               style={{
                 fontFamily: "'Noto Serif', serif",
@@ -134,9 +125,13 @@ export default function ConfiguratorPage({
         <ConfigSidebar />
       </main>
 
-      {/* Mobile UI — hidden on desktop */}
-      <BottomSheet modelId={modelId} onOpenTray={setActiveTray} />
-      <MaterialTray category={activeTray} onClose={() => setActiveTray(null)} />
+      {/* Mobile bottom sheet — hidden on desktop */}
+      <BottomSheet
+        modelId={modelId}
+        expanded={sheetExpanded}
+        onToggle={() => setSheetExpanded(e => !e)}
+        onCollapse={() => setSheetExpanded(false)}
+      />
     </div>
   )
 }
