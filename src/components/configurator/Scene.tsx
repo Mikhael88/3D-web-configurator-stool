@@ -40,6 +40,12 @@ function matName(mesh: THREE.Mesh): string {
 // Nodes whose name doesn't end in -tessuto but carry the upholstery material
 const UPHOLSTERY_NODE_NAMES = new Set(['c114-seduta-acciaio'])
 
+// Meshes permanently hidden (per-model overrides)
+const HIDDEN_MESH_NAMES = new Set([
+  'c112-seduta-cuciture',
+  'c112-schienale-cuciture',  // .001 suffix stripped by normalizeMeshName
+])
+
 function isUpholsteryMesh(mesh: THREE.Mesh): boolean {
   const n = normalizeMeshName(mesh.name)
   if (n === 'tessuto' || n.includes('-tessuto')) return true
@@ -310,16 +316,15 @@ function StoolInteraction({ modelId }: { modelId: string }) {
 }
 
 // ──────────────────────────────────────
-// Leather texture paths — all in one array: [d0..d4, normal]
+// Texture paths — deduplicated, path-keyed lookup (no index arithmetic)
 // ──────────────────────────────────────
-const LEATHER_MAT_IDS = UPHOLSTERY_MATERIALS
-  .filter(m => m.texturePath)
-  .map(m => m.id)
-
-const ALL_LEATHER_PATHS = [
+const ALL_TEXTURE_PATHS: string[] = [...new Set([
   ...UPHOLSTERY_MATERIALS.filter(m => m.texturePath).map(m => m.texturePath!),
-  '/textures/leather/clun-tileable-nornal.png',
-]
+  ...UPHOLSTERY_MATERIALS.filter(m => m.normalPath).map(m => m.normalPath!),
+])]
+
+// path → index in the array above (stable at module load time)
+const TEXTURE_IDX = new Map(ALL_TEXTURE_PATHS.map((p, i) => [p, i]))
 
 // ──────────────────────────────────────
 // Stool Model
@@ -328,8 +333,8 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
   const { scene } = useGLTF(glbPath)
   const { upholsteryId } = useConfiguratorStore()
 
-  // Single useTexture call: all 5 diffuse + shared normal (last entry)
-  const allLeatherTextures = useTexture(ALL_LEATHER_PATHS) as THREE.Texture[]
+  // Load all textures; index by path via TEXTURE_IDX
+  const allTextures = useTexture(ALL_TEXTURE_PATHS) as THREE.Texture[]
 
   // Static materials — stable, recreated only on model change
   const metalMat = useMemo(() => makeMetalMat(), [])
@@ -339,22 +344,26 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
     const m = UPHOLSTERY_MATERIALS.find(x => x.id === upholsteryId) || UPHOLSTERY_MATERIALS[0]
 
     let upholsteryMat: THREE.MeshStandardMaterial
-    if (m.texturePath) {
-      const idx = LEATHER_MAT_IDS.indexOf(m.id)
-      const diffuse = allLeatherTextures[idx]
-      const normal = allLeatherTextures[allLeatherTextures.length - 1]
+    if (m.texturePath && m.normalPath) {
+      const diffuse = allTextures[TEXTURE_IDX.get(m.texturePath)!]
+      const normal  = allTextures[TEXTURE_IDX.get(m.normalPath)!]
 
-      // Configure texture params synchronously before material creation
       diffuse.wrapS = diffuse.wrapT = THREE.RepeatWrapping
-      diffuse.repeat.set(3, 3)
+      diffuse.repeat.set(2, 2)
       diffuse.colorSpace = THREE.SRGBColorSpace
       diffuse.needsUpdate = true
+
       normal.wrapS = normal.wrapT = THREE.RepeatWrapping
-      normal.repeat.set(3, 3)
+      normal.repeat.set(2, 2)
+      normal.needsUpdate = true
 
       upholsteryMat = new THREE.MeshStandardMaterial({
         map: diffuse,
         normalMap: normal,
+        normalScale: new THREE.Vector2(
+          m.category === 'leather' ? 2 : 1,
+          m.category === 'leather' ? 2 : 1,
+        ),
         roughness: m.roughness,
         metalness: m.metalness,
         envMapIntensity: 1.2,
@@ -377,7 +386,7 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
         envMapIntensity: 0.5,
       }),
     }
-  }, [upholsteryId, allLeatherTextures])
+  }, [upholsteryId, allTextures])
 
   // First load: register refs, enable shadows, apply static materials
   useEffect(() => {
@@ -396,6 +405,7 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
         const n = normalizeMeshName(child.name)
 
         if (isMetalMesh(mesh.name)) mesh.material = metalMat
+        if (HIDDEN_MESH_NAMES.has(n)) mesh.visible = false
         if (rotatingName && n === rotatingName) rotatingMesh = child
         if (hitName && n === hitName) hitMesh = child
 
@@ -507,7 +517,7 @@ function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }
 
       <StudioSetup />
 
-      <Environment files="/hdr-ambiente.exr" environmentIntensity={2.5} background={false} />
+      <Environment files="/hdr-ambiente.exr" environmentIntensity={2.0} background={false} />
 
       <StoolModel glbPath={glbPath} modelId={modelId} />
       <StoolInteraction modelId={modelId} />

@@ -37,7 +37,7 @@ function LoadingScreen() {
           className="text-2xl font-bold tracking-[0.3em] uppercase"
           style={{ fontFamily: "'Noto Serif', serif", color: '#2e3d2f' }}
         >
-          ATELIER MARITIME
+          IAM
         </span>
         <div
           className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
@@ -77,6 +77,11 @@ export default function ConfiguratorPage({
           <Suspense fallback={<LoadingScreen />}>
             <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} />
           </Suspense>
+
+          {/* Logo overlay — top left, clicks back to homepage */}
+          <a href="/" className="absolute top-3 left-3 z-20" style={{ display: 'block', cursor: 'pointer' }}>
+            <img src="/logo.png" alt="IAM" style={{ height: 108, width: 'auto', display: 'block' }} />
+          </a>
 
           {/* Interaction hints — desktop only */}
           <div className="absolute bottom-8 left-8 z-20 hidden lg:flex flex-col gap-2 opacity-40">

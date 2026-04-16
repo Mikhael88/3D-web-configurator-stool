@@ -51,7 +51,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
         borderTop: `1px solid ${THEME.borderSageSubtle}`,
         boxShadow: THEME.shadowSheet,
         height: '40vh',
-        transform: expanded ? 'translateY(0)' : 'translateY(calc(100% - 48px))',
+        transform: expanded ? 'translateY(0)' : 'translateY(calc(100% - 100px))',
         transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >

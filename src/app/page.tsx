@@ -137,7 +137,7 @@ export default function Home() {
             fontWeight: 300,
           }}
         >
-          Atelier Maritime
+          IAM
         </span>
       </div>
 
