@@ -44,7 +44,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
 
   return (
     <div
-      className="lg:hidden fixed bottom-0 left-0 right-0 flex flex-col"
+      className="lg:hidden absolute bottom-0 left-0 right-0 flex flex-col"
       style={{
         zIndex: 40,
         background: THEME.bgSidebar,

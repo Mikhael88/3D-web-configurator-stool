@@ -97,15 +97,15 @@ function ProductCard({ model }: { model: ModelConfig }) {
         style={{ borderTop: `1px solid ${THEME.borderSubtle}` }}
       >
         <span
-          className="text-[2.1rem] font-bold tracking-[0.08em]"
-          style={{ fontFamily: "'Source Sans 3', sans-serif", color: THEME.textPrimary }}
+          className="font-bold tracking-[0.08em]"
+          style={{ fontSize: 'clamp(0.75rem, 4vw, 2.1rem)', fontFamily: "'Source Sans 3', sans-serif", color: THEME.textPrimary }}
         >
           {model.name}
         </span>
         {isReady && (
           <span
             style={{
-              fontSize: '1.44rem',
+              fontSize: 'clamp(0.55rem, 2.5vw, 1.44rem)',
               letterSpacing: '0.1em',
               color: THEME.textMuted,
               fontFamily: "'Source Sans 3', sans-serif",

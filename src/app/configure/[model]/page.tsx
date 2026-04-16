@@ -62,7 +62,7 @@ export default function ConfiguratorPage({
 
   return (
     <div
-      className="h-screen w-screen overflow-hidden flex flex-col"
+      className="h-screen w-screen overflow-hidden flex flex-col relative"
       style={{ backgroundColor: THEME.bgPage }}
     >
       <main className="flex flex-1 overflow-hidden">
@@ -79,7 +79,7 @@ export default function ConfiguratorPage({
           </Suspense>
 
           {/* Logo overlay — top left, clicks back to homepage */}
-          <a href="/" className="absolute top-3 left-3 z-20" style={{ display: 'block', cursor: 'pointer' }}>
+          <a href="/" className="absolute top-3 left-3 z-20 hidden lg:block" style={{ cursor: 'pointer' }}>
             <img src="/logo.png" alt="IAM" style={{ height: 108, width: 'auto', display: 'block' }} />
           </a>
 
