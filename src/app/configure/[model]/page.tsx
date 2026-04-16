@@ -78,11 +78,6 @@ export default function ConfiguratorPage({
             <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} />
           </Suspense>
 
-          {/* Logo overlay — top left, clicks back to homepage */}
-          <a href="/" className="absolute top-3 left-3 z-20 hidden lg:block" style={{ cursor: 'pointer' }}>
-            <img src="/logo.png" alt="IAM" style={{ height: 108, width: 'auto', display: 'block' }} />
-          </a>
-
           {/* Interaction hints — desktop only */}
           <div className="absolute bottom-8 left-8 z-20 hidden lg:flex flex-col gap-2 opacity-40">
             <div className="flex items-center gap-3">

@@ -20,7 +20,7 @@ function ProductCard({ model }: { model: ModelConfig }) {
       onClick={handleClick}
       onMouseEnter={() => { if (!isReady) setShowCS(true) }}
       onMouseLeave={() => setShowCS(false)}
-      className="relative flex flex-col overflow-hidden transition-all duration-300 lg:flex-1"
+      className="relative flex flex-col overflow-hidden transition-all duration-300 h-full lg:flex-1"
       style={{
         background: THEME.bgCard,
         borderRight: `1px solid ${THEME.borderSubtle}`,
@@ -122,11 +122,11 @@ function ProductCard({ model }: { model: ModelConfig }) {
 export default function Home() {
   return (
     <div
-      className="w-screen flex flex-col min-h-screen lg:h-screen lg:overflow-hidden"
+      className="w-screen flex flex-col h-screen overflow-hidden"
       style={{ backgroundColor: THEME.bgPage }}
     >
       {/* Brand signature — mobile only (desktop shows it inside the grid) */}
-      <div className="flex flex-col items-center px-4 py-6 lg:hidden">
+      <div className="flex flex-col items-center px-4 py-6 lg:hidden flex-shrink-0">
         <span
           style={{
             fontFamily: "'Source Sans 3', sans-serif",
@@ -142,14 +142,14 @@ export default function Home() {
       </div>
 
       {/* Product grid — 2×2 mobile, 4 col full-height desktop */}
-      <div className="grid grid-cols-2 lg:flex lg:flex-row lg:flex-1 lg:h-full">
+      <div className="grid grid-cols-2 grid-rows-2 flex-1 lg:flex lg:flex-row overflow-hidden">
         {MODELS.map(model => (
           <ProductCard key={model.id} model={model} />
         ))}
       </div>
 
       {/* Bottom hint — mobile only */}
-      <div className="flex justify-center px-4 py-5 lg:hidden">
+      <div className="flex justify-center px-4 py-5 lg:hidden flex-shrink-0">
         <span
           style={{
             fontSize: '0.6rem',
