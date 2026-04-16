@@ -70,7 +70,7 @@ export default function MaterialTray({ category, onClose }: Props) {
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
               color: THEME.textOnSageMuted,
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "'Source Sans 3', sans-serif",
             }}
           >
             {category === 'fabric' ? 'Fabric' : 'Leather'}
@@ -79,7 +79,7 @@ export default function MaterialTray({ category, onClose }: Props) {
             style={{
               fontSize: '0.65rem',
               color: THEME.textOnSageMuted,
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "'Source Sans 3', sans-serif",
             }}
           >
             {selectedMaterial?.name ?? ''}

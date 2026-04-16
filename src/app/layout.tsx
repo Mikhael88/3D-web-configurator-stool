@@ -15,7 +15,7 @@ export default function RootLayout({
     <html lang="it" suppressHydrationWarning>
       <head>
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Manrope:wght@200..800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap"
           rel="stylesheet"
         />
         <link
@@ -26,7 +26,7 @@ export default function RootLayout({
       <body
         className="antialiased overflow-hidden"
         style={{
-          fontFamily: "'Manrope', sans-serif",
+          fontFamily: "'Source Sans 3', sans-serif",
           backgroundColor: '#0c0e12',
           color: '#e2e2e8',
           margin: 0,

@@ -81,13 +81,13 @@ export default function ConfigSidebar() {
       <div className="p-8 pb-6">
         <h1
           className="text-4xl lg:text-5xl leading-tight"
-          style={{ fontFamily: "'Noto Serif', serif", color: THEME.textOnSage }}
+          style={{ fontFamily: "'Source Sans 3', sans-serif", color: THEME.textOnSage }}
         >
           {modelName}
         </h1>
         <p
           className="text-sm mt-5 leading-relaxed font-light max-w-sm"
-          style={{ color: THEME.textOnSage, fontFamily: "'Manrope', sans-serif" }}
+          style={{ color: THEME.textOnSage, fontFamily: "'Source Sans 3', sans-serif" }}
         >
           {modelConfig?.description ?? ''}
         </p>
@@ -210,12 +210,14 @@ export default function ConfigSidebar() {
           </button>
 
           {/* Contact */}
-          <button
+          <a
+            href="mailto:info@iam-arredo.it"
             className="py-4 flex items-center justify-center gap-2 text-xs uppercase tracking-[0.3em] font-medium transition-all duration-300"
             style={{
               border: `1px solid ${THEME.borderSageMid}`,
               color: THEME.textOnSage,
               backgroundColor: 'transparent',
+              textDecoration: 'none',
             }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = THEME.bgInput)}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -225,7 +227,7 @@ export default function ConfigSidebar() {
               <polyline points="22,6 12,13 2,6" />
             </svg>
             Contatto
-          </button>
+          </a>
         </div>
       </div>
     </aside>

@@ -71,7 +71,7 @@ function ProductCard({ model }: { model: ModelConfig }) {
                 letterSpacing: '0.4em',
                 textTransform: 'uppercase',
                 color: THEME.textMuted,
-                fontFamily: "'Manrope', sans-serif",
+                fontFamily: "'Source Sans 3', sans-serif",
               }}
             >
               Prossimamente
@@ -97,18 +97,18 @@ function ProductCard({ model }: { model: ModelConfig }) {
         style={{ borderTop: `1px solid ${THEME.borderSubtle}` }}
       >
         <span
-          className="text-sm font-light tracking-[0.08em]"
-          style={{ fontFamily: "'Noto Serif', serif", color: THEME.textPrimary }}
+          className="text-[2.1rem] font-bold tracking-[0.08em]"
+          style={{ fontFamily: "'Source Sans 3', sans-serif", color: THEME.textPrimary }}
         >
           {model.name}
         </span>
         {isReady && (
           <span
             style={{
-              fontSize: '0.6rem',
+              fontSize: '1.44rem',
               letterSpacing: '0.1em',
               color: THEME.textMuted,
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "'Source Sans 3', sans-serif",
             }}
           >
             Configura →
@@ -129,7 +129,7 @@ export default function Home() {
       <div className="flex flex-col items-center px-4 py-6 lg:hidden">
         <span
           style={{
-            fontFamily: "'Manrope', sans-serif",
+            fontFamily: "'Source Sans 3', sans-serif",
             fontSize: '0.6rem',
             letterSpacing: '0.55em',
             textTransform: 'uppercase',
@@ -141,8 +141,8 @@ export default function Home() {
         </span>
       </div>
 
-      {/* Product grid — 1 col scrollable mobile, 4 col full-height desktop */}
-      <div className="flex flex-col lg:flex-row lg:flex-1 lg:h-full">
+      {/* Product grid — 2×2 mobile, 4 col full-height desktop */}
+      <div className="grid grid-cols-2 lg:flex lg:flex-row lg:flex-1 lg:h-full">
         {MODELS.map(model => (
           <ProductCard key={model.id} model={model} />
         ))}
@@ -156,7 +156,7 @@ export default function Home() {
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
             color: THEME.textMuted,
-            fontFamily: "'Manrope', sans-serif",
+            fontFamily: "'Source Sans 3', sans-serif",
           }}
         >
           Seleziona un modello per iniziare la configurazione

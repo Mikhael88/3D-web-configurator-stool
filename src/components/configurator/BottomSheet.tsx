@@ -105,7 +105,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
                 letterSpacing: '0.2em',
                 textTransform: 'uppercase',
                 color: THEME.textOnSageMuted,
-                fontFamily: "'Manrope', sans-serif",
+                fontFamily: "'Source Sans 3', sans-serif",
               }}
             >
               Seduta e schienale
@@ -115,7 +115,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
                 fontSize: '0.6rem',
                 letterSpacing: '0.08em',
                 color: THEME.textOnSage,
-                fontFamily: "'Manrope', sans-serif",
+                fontFamily: "'Source Sans 3', sans-serif",
               }}>
                 {currentUpholstery.name}
               </div>
@@ -136,7 +136,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
                 fontWeight: 700,
                 color: activeCategory === 'fabric' ? THEME.textInverse : THEME.textOnSage,
                 cursor: 'pointer',
-                fontFamily: "'Manrope', sans-serif",
+                fontFamily: "'Source Sans 3', sans-serif",
                 transition: 'all 0.2s ease',
               }}
             >
@@ -154,7 +154,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
                 fontWeight: 700,
                 color: activeCategory === 'leather' ? THEME.textInverse : THEME.textOnSage,
                 cursor: 'pointer',
-                fontFamily: "'Manrope', sans-serif",
+                fontFamily: "'Source Sans 3', sans-serif",
                 transition: 'all 0.2s ease',
               }}
             >
@@ -222,12 +222,13 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
               fontWeight: 700,
               border: 'none',
               cursor: isGenerating ? 'wait' : 'pointer',
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "'Source Sans 3', sans-serif",
             }}
           >
             {isGenerating ? 'Generazione…' : 'SALVA PDF'}
           </button>
-          <button
+          <a
+            href="mailto:info@iam-arredo.it"
             style={{
               flex: 1,
               padding: '12px 0',
@@ -237,11 +238,15 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
               letterSpacing: '0.2em',
               color: THEME.textOnSage,
               cursor: 'pointer',
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "'Source Sans 3', sans-serif",
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             CONTATTO
-          </button>
+          </a>
         </div>
 
         {/* Description */}
@@ -253,7 +258,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
               textTransform: 'uppercase',
               color: THEME.textOnSageMuted,
               marginBottom: 8,
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "'Source Sans 3', sans-serif",
             }}
           >
             Descrizione
@@ -264,7 +269,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
               lineHeight: 1.6,
               color: THEME.textOnSage,
               margin: 0,
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "'Source Sans 3', sans-serif",
             }}
           >
             {description}

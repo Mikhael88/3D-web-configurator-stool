@@ -35,7 +35,7 @@ function LoadingScreen() {
       <div className="flex flex-col items-center gap-6">
         <span
           className="text-2xl font-bold tracking-[0.3em] uppercase"
-          style={{ fontFamily: "'Noto Serif', serif", color: '#2e3d2f' }}
+          style={{ fontFamily: "'Source Sans 3', sans-serif", color: '#2e3d2f' }}
         >
           IAM
         </span>
@@ -92,7 +92,7 @@ export default function ConfiguratorPage({
               </svg>
               <span
                 className="text-[10px] uppercase tracking-[0.2em]"
-                style={{ color: '#728473', fontFamily: "'Manrope', sans-serif" }}
+                style={{ color: '#728473', fontFamily: "'Source Sans 3', sans-serif" }}
               >
                 Orbita e panoramica
               </span>
@@ -104,7 +104,7 @@ export default function ConfiguratorPage({
               </svg>
               <span
                 className="text-[10px] uppercase tracking-[0.2em]"
-                style={{ color: '#728473', fontFamily: "'Manrope', sans-serif" }}
+                style={{ color: '#728473', fontFamily: "'Source Sans 3', sans-serif" }}
               >
                 Clicca per ruotare
               </span>
@@ -115,7 +115,7 @@ export default function ConfiguratorPage({
           <div className="absolute top-3 right-4 z-20 lg:hidden">
             <span
               style={{
-                fontFamily: "'Noto Serif', serif",
+                fontFamily: "'Source Sans 3', sans-serif",
                 fontSize: '1.25rem',
                 color: '#2e3d2f',
                 letterSpacing: '0.02em',
