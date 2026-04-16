@@ -43,8 +43,8 @@ function ProductCard({ model }: { model: ModelConfig }) {
               inset: 0,
               width: '100%',
               height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center 15%',
+              objectFit: 'contain',
+              objectPosition: 'center center',
             }}
           />
         ) : (
@@ -98,14 +98,14 @@ function ProductCard({ model }: { model: ModelConfig }) {
       >
         <span
           className="font-bold tracking-[0.08em]"
-          style={{ fontSize: 'clamp(0.75rem, 4vw, 2.1rem)', fontFamily: "'Source Sans 3', sans-serif", color: THEME.textPrimary }}
+          style={{ fontSize: 'clamp(0.75rem, 4vw, 1.47rem)', fontFamily: "'Source Sans 3', sans-serif", color: THEME.textPrimary }}
         >
           {model.name}
         </span>
         {isReady && (
           <span
             style={{
-              fontSize: 'clamp(0.55rem, 2.5vw, 1.44rem)',
+              fontSize: 'clamp(0.55rem, 2.5vw, 1.0rem)',
               letterSpacing: '0.1em',
               color: THEME.textMuted,
               fontFamily: "'Source Sans 3', sans-serif",

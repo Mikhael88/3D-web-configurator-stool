@@ -46,36 +46,12 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
     <div
       className="lg:hidden flex-shrink-0 overflow-hidden flex flex-col"
       style={{
-        height: expanded ? '40vh' : '100px',
-        transition: 'height 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+        height: '40vh',
         background: THEME.bgSidebar,
         borderTop: `1px solid ${THEME.borderSageSubtle}`,
         boxShadow: THEME.shadowSheet,
       }}
     >
-      {/* Drag handle — tap to toggle */}
-      <div
-        role="button"
-        aria-label={expanded ? 'Comprimi pannello' : 'Espandi pannello'}
-        onClick={onToggle}
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          padding: '14px 0 10px',
-          cursor: 'pointer',
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            width: 36,
-            height: 4,
-            borderRadius: 2,
-            background: THEME.borderSageMid,
-          }}
-        />
-      </div>
-
       {/* Scrollable content */}
       <div
         style={{
