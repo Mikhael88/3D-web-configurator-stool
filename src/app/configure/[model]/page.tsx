@@ -62,13 +62,13 @@ export default function ConfiguratorPage({
 
   return (
     <div
-      className="h-screen w-screen overflow-hidden flex flex-col relative"
+      className="h-screen w-screen overflow-hidden flex flex-col"
       style={{ backgroundColor: THEME.bgPage }}
     >
       <main className="flex flex-1 overflow-hidden">
         {/* 3D Viewport */}
         <section
-          className={`flex-1 relative canvas-section${sheetExpanded ? ' sheet-open' : ''}`}
+          className="flex-1 relative"
           onPointerDown={() => setInteracting(true)}
           onPointerUp={() => setInteracting(false)}
           onPointerCancel={() => setInteracting(false)}

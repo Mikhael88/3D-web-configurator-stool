@@ -310,7 +310,7 @@ function StoolInteraction({ modelId }: { modelId: string }) {
       maxPolarAngle={Math.PI / 2 - 0.05}
       minDistance={1.5}
       maxDistance={8}
-      target={[0, 0.7, 0]}
+      target={[0, 0.55, 0]}
     />
   )
 }
@@ -543,8 +543,8 @@ export default function ConfiguratorScene({ glbPath, modelId }: { glbPath: strin
     <Canvas
       shadows={{ type: THREE.PCFSoftShadowMap }}
       camera={{
-        position: [2.5, 2, 2.5],
-        fov: 35,
+        position: [2.5, 1.2, 2.5],
+        fov: 38,
         near: 0.1,
         far: 100,
       }}

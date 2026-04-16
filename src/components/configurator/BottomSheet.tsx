@@ -44,15 +44,13 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
 
   return (
     <div
-      className="lg:hidden absolute bottom-0 left-0 right-0 flex flex-col"
+      className="lg:hidden flex-shrink-0 overflow-hidden flex flex-col"
       style={{
-        zIndex: 40,
+        height: expanded ? '40vh' : '100px',
+        transition: 'height 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
         background: THEME.bgSidebar,
         borderTop: `1px solid ${THEME.borderSageSubtle}`,
         boxShadow: THEME.shadowSheet,
-        height: '40vh',
-        transform: expanded ? 'translateY(0)' : 'translateY(calc(100% - 100px))',
-        transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >
       {/* Drag handle — tap to toggle */}
