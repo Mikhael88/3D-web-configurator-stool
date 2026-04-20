@@ -89,14 +89,18 @@ export default function ConfiguratorPage({
     const isAndroid = /android/i.test(navigator.userAgent)
 
     if (isAndroid) {
+      alert('[AR] step1: navigator.xr=' + (typeof navigator.xr))
       if (navigator.xr) {
         navigator.xr.isSessionSupported('immersive-ar').then(supported => {
+          alert('[AR] step2: supported=' + supported)
           if (supported) {
-            xrStore.enterAR().catch(err => console.error('[AR] enterAR failed:', err))
+            xrStore.enterAR()
+              .then(() => alert('[AR] step3: enterAR resolved'))
+              .catch(err => alert('[AR] step3: enterAR failed: ' + err))
           } else {
             alert('AR non supportato su questo dispositivo.')
           }
-        }).catch(err => console.error('[AR] isSessionSupported failed:', err))
+        }).catch(err => alert('[AR] step2: isSessionSupported failed: ' + err))
       } else {
         alert('AR non supportato su questo browser.')
       }
