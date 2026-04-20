@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, use, useState, useEffect } from 'react'
+import { Suspense, use, useState } from 'react'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
@@ -59,28 +59,22 @@ export default function ConfiguratorPage({
   const modelConfig = MODELS.find(m => m.id === modelId)
   const setInteracting = useConfiguratorStore(s => s.setInteracting)
   const [sheetExpanded, setSheetExpanded] = useState(true)
-  const [isMobile, setIsMobile] = useState(false)
-  const [arReady, setArReady] = useState(false)
-
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 1023px)')
-    setIsMobile(mql.matches)
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    mql.addEventListener('change', handler)
-    return () => mql.removeEventListener('change', handler)
-  }, [])
-
-  useEffect(() => {
-    if (!isMobile) {
-      setArReady(false)
-      return
-    }
-    customElements.whenDefined('model-viewer').then(() => setArReady(true))
-  }, [isMobile])
 
   if (!modelConfig?.glbPath) notFound()
 
+  const BASE_URL = 'https://3-d-web-configurator-stool.vercel.app'
+
   const handleAR = () => {
+    const isAndroid = /android/i.test(navigator.userAgent)
+    const glbUrl = `${BASE_URL}${modelConfig.glbPath}`
+
+    if (isAndroid) {
+      window.location.href =
+        `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(modelConfig.name ?? '')}`
+      return
+    }
+
+    // iOS: use model-viewer AR Quick Look
     const mv = document.getElementById('ar-host') as (ModelViewerElement | null)
     mv?.activateAR?.()
   }
@@ -98,28 +92,25 @@ export default function ConfiguratorPage({
           onPointerUp={() => setInteracting(false)}
           onPointerCancel={() => setInteracting(false)}
         >
-          {isMobile && (
-            <>
-              <Script
-                src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
-                strategy="lazyOnload"
-              />
-              <model-viewer
-                id="ar-host"
-                src={modelConfig.glbPath ?? ''}
-                alt={`${modelConfig.name} modello 3D`}
-                ar
-                ar-modes="scene-viewer quick-look webxr"
-                style={{
-                  position: 'absolute',
-                  width: 1,
-                  height: 1,
-                  opacity: 0,
-                  pointerEvents: 'none',
-                }}
-              />
-            </>
-          )}
+          {/* model-viewer for iOS AR Quick Look — loaded lazily, hidden */}
+          <Script
+            src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
+            strategy="lazyOnload"
+          />
+          <model-viewer
+            id="ar-host"
+            src={`${BASE_URL}${modelConfig.glbPath}`}
+            alt={`${modelConfig.name} modello 3D`}
+            ar
+            ar-modes="quick-look"
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              opacity: 0,
+              pointerEvents: 'none',
+            }}
+          />
 
           {/* 3D Canvas */}
           <Suspense fallback={<LoadingScreen />}>
@@ -171,7 +162,6 @@ export default function ConfiguratorPage({
           {/* AR button — mobile only, bottom-right */}
           <button
             onClick={handleAR}
-            disabled={!arReady}
             className="lg:hidden absolute bottom-4 right-4 z-20 flex flex-col items-center justify-center gap-1 rounded-lg"
             style={{
               width: 52,
