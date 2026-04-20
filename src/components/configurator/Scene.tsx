@@ -6,6 +6,8 @@ import { useGLTF, useTexture, Environment, ContactShadows, OrbitControls } from 
 import * as THREE from 'three'
 import { useConfiguratorStore, UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
 import { setCaptureViews } from '@/lib/capture-ref'
+import { XR, useXR, useXRHitTest, useXRInputSourceEvent } from '@react-three/xr'
+import { xrStore } from '@/stores/ar-store'
 
 // ──────────────────────────────────────
 // Mesh targets
@@ -507,9 +509,65 @@ function CaptureHandler() {
 }
 
 // ──────────────────────────────────────
+// AR Scene — hit-test reticle + tap-to-place model
+// ──────────────────────────────────────
+function ARContent({ glbPath, modelId }: { glbPath: string; modelId: string }) {
+  const reticleRef = useRef<THREE.Mesh>(null)
+  const modelGroupRef = useRef<THREE.Group>(null)
+  const [placed, setPlaced] = useState(false)
+  const hitMatrix = useRef(new THREE.Matrix4())
+
+  useXRHitTest(
+    (results: XRHitTestResult[], getWorldMatrix: (target: THREE.Matrix4, result: XRHitTestResult) => boolean) => {
+      if (!reticleRef.current || !modelGroupRef.current) return
+      if (results.length === 0) {
+        reticleRef.current.visible = false
+        return
+      }
+      getWorldMatrix(hitMatrix.current, results[0])
+
+      if (!placed) {
+        reticleRef.current.visible = true
+        reticleRef.current.matrix.copy(hitMatrix.current)
+        reticleRef.current.matrixAutoUpdate = false
+        modelGroupRef.current.matrix.copy(hitMatrix.current)
+        modelGroupRef.current.matrixAutoUpdate = false
+      }
+    },
+    'viewer',
+  )
+
+  useXRInputSourceEvent('all', 'select', () => {
+    if (!placed) setPlaced(true)
+  }, [placed])
+
+  return (
+    <>
+      {/* Surface reticle */}
+      <mesh ref={reticleRef} visible={false} matrixAutoUpdate={false}>
+        <ringGeometry args={[0.07, 0.1, 32]} />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* Model follows reticle until tapped, then anchored */}
+      <group ref={modelGroupRef} matrixAutoUpdate={false}>
+        <StoolModel glbPath={glbPath} modelId={modelId} />
+      </group>
+    </>
+  )
+}
+
+// ──────────────────────────────────────
 // Full Scene
 // ──────────────────────────────────────
 function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }) {
+  const session = useXR((state) => state.session)
+  const isAR = session != null
+
+  if (isAR) {
+    return <ARContent glbPath={glbPath} modelId={modelId} />
+  }
+
   return (
     <>
       <color attach="background" args={['#ffffff']} />
@@ -550,13 +608,16 @@ export default function ConfiguratorScene({ glbPath, modelId }: { glbPath: strin
       }}
       gl={{
         antialias: true,
+        alpha: true,
         toneMapping: THREE.AgXToneMapping,
         toneMappingExposure: 0.9,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
       style={{ background: '#ffffff' }}
     >
-      <SceneContent glbPath={glbPath} modelId={modelId} />
+      <XR store={xrStore}>
+        <SceneContent glbPath={glbPath} modelId={modelId} />
+      </XR>
     </Canvas>
   )
 }
