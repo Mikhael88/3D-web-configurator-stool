@@ -10,6 +10,7 @@ import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
 import { MODELS } from '@/models'
 import { THEME } from '@/lib/theme'
+import { xrStore } from '@/stores/ar-store'
 
 const ConfiguratorScene = dynamic(
   () => import('@/components/configurator/Scene'),
@@ -59,20 +60,25 @@ export default function ConfiguratorPage({
   const modelConfig = MODELS.find(m => m.id === modelId)
   const setInteracting = useConfiguratorStore(s => s.setInteracting)
   const [sheetExpanded, setSheetExpanded] = useState(true)
+  const [sceneReady, setSceneReady] = useState(false)
 
   if (!modelConfig?.glbPath) notFound()
 
-  const BASE_URL = 'https://3-d-web-configurator-stool.vercel.app'
-
   const handleAR = () => {
     const isAndroid = /android/i.test(navigator.userAgent)
-    const glbUrl = `${BASE_URL}${modelConfig.glbPath}`
 
     if (isAndroid) {
-      const params = `file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(modelConfig.name ?? '')}`
-      const fallback = encodeURIComponent(BASE_URL)
-      window.location.href =
-        `intent://arvr.google.com/scene-viewer/1.0?${params}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end`
+      if (navigator.xr) {
+        navigator.xr.isSessionSupported('immersive-ar').then(supported => {
+          if (supported) {
+            xrStore.enterAR().catch(err => console.error('[AR] enterAR failed:', err))
+          } else {
+            alert('AR non supportato su questo dispositivo.')
+          }
+        }).catch(err => console.error('[AR] isSessionSupported failed:', err))
+      } else {
+        alert('AR non supportato su questo browser.')
+      }
       return
     }
 
@@ -101,7 +107,7 @@ export default function ConfiguratorPage({
           />
           <model-viewer
             id="ar-host"
-            src={`${BASE_URL}${modelConfig.glbPath}`}
+            src={modelConfig.glbPath ?? ''}
             alt={`${modelConfig.name} modello 3D`}
             ar
             ar-modes="quick-look"
@@ -116,7 +122,7 @@ export default function ConfiguratorPage({
 
           {/* 3D Canvas */}
           <Suspense fallback={<LoadingScreen />}>
-            <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} />
+            <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} onReady={() => setSceneReady(true)} />
           </Suspense>
 
           {/* Interaction hints — desktop only */}
@@ -164,12 +170,14 @@ export default function ConfiguratorPage({
           {/* AR button — mobile only, bottom-right */}
           <button
             onClick={handleAR}
+            disabled={!sceneReady}
             className="lg:hidden absolute bottom-4 right-4 z-20 flex flex-col items-center justify-center gap-1 rounded-lg"
             style={{
               width: 52,
               height: 52,
               backgroundColor: THEME.accentNavy,
               color: THEME.textInverse,
+              opacity: sceneReady ? 1 : 0.4,
             }}
             aria-label="Visualizza in realtà aumentata"
           >

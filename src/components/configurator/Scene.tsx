@@ -331,7 +331,7 @@ const TEXTURE_IDX = new Map(ALL_TEXTURE_PATHS.map((p, i) => [p, i]))
 // ──────────────────────────────────────
 // Stool Model
 // ──────────────────────────────────────
-function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) {
+function StoolModel({ glbPath, modelId, disableInteractionRefs = false }: { glbPath: string; modelId: string; disableInteractionRefs?: boolean }) {
   const { scene } = useGLTF(glbPath)
   const { upholsteryId } = useConfiguratorStore()
 
@@ -392,7 +392,7 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
 
   // First load: register refs, enable shadows, apply static materials
   useEffect(() => {
-    setStoolScene(scene)
+    if (!disableInteractionRefs) setStoolScene(scene)
     const rotatingName = getSeatRotatingMeshName(modelId)
     const hitName = getSeatHitMeshName(modelId)
     let rotatingMesh: THREE.Object3D | null = null
@@ -411,25 +411,29 @@ function StoolModel({ glbPath, modelId }: { glbPath: string; modelId: string }) 
         if (rotatingName && n === rotatingName) rotatingMesh = child
         if (hitName && n === hitName) hitMesh = child
 
-        if (isRotatingBody(child.name)) setRotatingBody(child)
-        else if (isRotatingBody(child.parent?.name || '') && !rotatingBodyObj) {
-          setRotatingBody(child.parent!)
+        if (!disableInteractionRefs) {
+          if (isRotatingBody(child.name)) setRotatingBody(child)
+          else if (isRotatingBody(child.parent?.name || '') && !rotatingBodyObj) {
+            setRotatingBody(child.parent!)
+          }
         }
       }
 
-      if ((child.type === 'Group' || child.type === 'Object3D') && isRotatingBody(child.name)) {
+      if (!disableInteractionRefs && (child.type === 'Group' || child.type === 'Object3D') && isRotatingBody(child.name)) {
         setRotatingBody(child)
       }
     })
 
-    setSeatObjects(rotatingMesh, hitMesh ?? rotatingMesh, (rotatingMesh as THREE.Object3D | null)?.position.y ?? 0)
+    if (!disableInteractionRefs) setSeatObjects(rotatingMesh, hitMesh ?? rotatingMesh, (rotatingMesh as THREE.Object3D | null)?.position.y ?? 0)
 
     return () => {
-      setStoolScene(null)
-      setRotatingBody(null)
-      setSeatObjects(null, null)
+      if (!disableInteractionRefs) {
+        setStoolScene(null)
+        setRotatingBody(null)
+        setSeatObjects(null, null)
+      }
     }
-  }, [scene, modelId, metalMat])
+  }, [scene, modelId, metalMat, disableInteractionRefs])
 
   // Apply material and visibility
   useEffect(() => {
@@ -515,7 +519,10 @@ function ARContent({ glbPath, modelId }: { glbPath: string; modelId: string }) {
   const reticleRef = useRef<THREE.Mesh>(null)
   const modelGroupRef = useRef<THREE.Group>(null)
   const [placed, setPlaced] = useState(false)
+  const placedRef = useRef(false)
   const hitMatrix = useRef(new THREE.Matrix4())
+
+  useEffect(() => { placedRef.current = placed }, [placed])
 
   useXRHitTest(
     (results: XRHitTestResult[], getWorldMatrix: (target: THREE.Matrix4, result: XRHitTestResult) => boolean) => {
@@ -526,32 +533,40 @@ function ARContent({ glbPath, modelId }: { glbPath: string; modelId: string }) {
       }
       getWorldMatrix(hitMatrix.current, results[0])
 
-      if (!placed) {
+      if (!placedRef.current) {
         reticleRef.current.visible = true
-        reticleRef.current.matrix.copy(hitMatrix.current)
         reticleRef.current.matrixAutoUpdate = false
-        modelGroupRef.current.matrix.copy(hitMatrix.current)
+        reticleRef.current.matrixWorldAutoUpdate = false
+        reticleRef.current.matrix.copy(hitMatrix.current)
+        reticleRef.current.matrixWorld.copy(hitMatrix.current)
         modelGroupRef.current.matrixAutoUpdate = false
+        modelGroupRef.current.matrixWorldAutoUpdate = false
+        modelGroupRef.current.matrix.copy(hitMatrix.current)
+        modelGroupRef.current.matrixWorld.copy(hitMatrix.current)
       }
     },
     'viewer',
   )
 
   useXRInputSourceEvent('all', 'select', () => {
-    if (!placed) setPlaced(true)
-  }, [placed])
+    if (!placedRef.current) {
+      placedRef.current = true
+      setPlaced(true)
+      if (reticleRef.current) reticleRef.current.visible = false
+    }
+  }, [])
 
   return (
     <>
       {/* Surface reticle */}
-      <mesh ref={reticleRef} visible={false} matrixAutoUpdate={false}>
+      <mesh ref={reticleRef} visible={false} matrixAutoUpdate={false} matrixWorldAutoUpdate={false}>
         <ringGeometry args={[0.07, 0.1, 32]} />
         <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
       </mesh>
 
       {/* Model follows reticle until tapped, then anchored */}
-      <group ref={modelGroupRef} matrixAutoUpdate={false}>
-        <StoolModel glbPath={glbPath} modelId={modelId} />
+      <group ref={modelGroupRef} matrixAutoUpdate={false} matrixWorldAutoUpdate={false}>
+        <StoolModel glbPath={glbPath} modelId={modelId} disableInteractionRefs />
       </group>
     </>
   )
@@ -596,7 +611,9 @@ function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }
 // ──────────────────────────────────────
 // Exported Canvas
 // ──────────────────────────────────────
-export default function ConfiguratorScene({ glbPath, modelId }: { glbPath: string; modelId: string }) {
+export default function ConfiguratorScene({ glbPath, modelId, onReady }: { glbPath: string; modelId: string; onReady?: () => void }) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { onReady?.() }, [])
   return (
     <Canvas
       shadows={{ type: THREE.PCFSoftShadowMap }}
@@ -613,7 +630,6 @@ export default function ConfiguratorScene({ glbPath, modelId }: { glbPath: strin
         toneMappingExposure: 0.9,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
-      style={{ background: '#ffffff' }}
     >
       <XR store={xrStore}>
         <SceneContent glbPath={glbPath} modelId={modelId} />
