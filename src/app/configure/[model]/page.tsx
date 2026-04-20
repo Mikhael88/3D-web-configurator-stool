@@ -1,11 +1,10 @@
 'use client'
 
-import { Suspense, use, useState } from 'react'
-import Script from 'next/script'
+import { Suspense, use, useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
 import { useConfiguratorStore } from '@/stores/configurator-store'
-import type { ModelViewerElement } from '@/types/model-viewer'
+import { getUsdzExporter } from '@/lib/usdz-export-ref'
 import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
 import { MODELS } from '@/models'
@@ -60,11 +59,33 @@ export default function ConfiguratorPage({
   const modelConfig = MODELS.find(m => m.id === modelId)
   const setInteracting = useConfiguratorStore(s => s.setInteracting)
   const [sheetExpanded, setSheetExpanded] = useState(true)
-  const [sceneReady, setSceneReady] = useState(false)
+  const [arLoading, setArLoading] = useState(false)
+  const [iosArUrl, setIosArUrl] = useState<string | null>(null)
+  const upholsteryId = useConfiguratorStore(s => s.upholsteryId)
+  const exportCancelRef = useRef(false)
+
+  // Reset iOS AR URL whenever material changes — next tap re-exports with new material.
+  useEffect(() => {
+    exportCancelRef.current = true
+    setIosArUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+  }, [upholsteryId])
+
+  // Revoke blob URL on unmount to avoid memory leaks.
+  useEffect(() => {
+    return () => {
+      setIosArUrl(prev => {
+        if (prev) URL.revokeObjectURL(prev)
+        return null
+      })
+    }
+  }, [])
 
   if (!modelConfig?.glbPath) notFound()
 
-  const handleAR = () => {
+  const handleAR = async () => {
     const isAndroid = /android/i.test(navigator.userAgent)
 
     if (isAndroid) {
@@ -82,9 +103,30 @@ export default function ConfiguratorPage({
       return
     }
 
-    // iOS: use model-viewer AR Quick Look
-    const mv = document.getElementById('ar-host') as (ModelViewerElement | null)
-    mv?.activateAR?.()
+    // iOS: export USDZ with configured material, then show AR Quick Look link.
+    // Two-step (export → user taps link) is required because iOS Safari blocks
+    // programmatic <a>.click() after async/await.
+    const exportFn = getUsdzExporter()
+    if (!exportFn) {
+      alert('Scena 3D non ancora pronta. Riprova tra un momento.')
+      return
+    }
+
+    exportCancelRef.current = false
+    setArLoading(true)
+    try {
+      const blob = await exportFn()
+      if (exportCancelRef.current) return // material changed mid-export, discard
+      const url = URL.createObjectURL(blob)
+      setIosArUrl(url)
+    } catch (err) {
+      if (!exportCancelRef.current) {
+        console.error('[AR] USDZ export failed:', err)
+        alert('Errore nella preparazione dell\'AR.')
+      }
+    } finally {
+      setArLoading(false)
+    }
   }
 
   return (
@@ -100,29 +142,9 @@ export default function ConfiguratorPage({
           onPointerUp={() => setInteracting(false)}
           onPointerCancel={() => setInteracting(false)}
         >
-          {/* model-viewer for iOS AR Quick Look — loaded lazily, hidden */}
-          <Script
-            src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
-            strategy="lazyOnload"
-          />
-          <model-viewer
-            id="ar-host"
-            src={modelConfig.glbPath ?? ''}
-            alt={`${modelConfig.name} modello 3D`}
-            ar
-            ar-modes="quick-look"
-            style={{
-              position: 'absolute',
-              width: 1,
-              height: 1,
-              opacity: 0,
-              pointerEvents: 'none',
-            }}
-          />
-
           {/* 3D Canvas */}
           <Suspense fallback={<LoadingScreen />}>
-            <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} onReady={() => setSceneReady(true)} />
+            <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} />
           </Suspense>
 
           {/* Interaction hints — desktop only */}
@@ -170,26 +192,72 @@ export default function ConfiguratorPage({
           {/* AR button — mobile only, bottom-right */}
           <button
             onClick={handleAR}
-            disabled={!sceneReady}
+            disabled={arLoading}
             className="lg:hidden absolute bottom-4 right-4 z-20 flex flex-col items-center justify-center gap-1 rounded-lg"
             style={{
               width: 52,
               height: 52,
               backgroundColor: THEME.accentNavy,
               color: THEME.textInverse,
-              opacity: sceneReady ? 1 : 0.4,
+              opacity: arLoading ? 0.6 : 1,
             }}
             aria-label="Visualizza in realtà aumentata"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-            <span style={{ fontSize: '0.5rem', letterSpacing: '0.15em', fontFamily: "'Source Sans 3', sans-serif", fontWeight: 700 }}>
-              AR
-            </span>
+            {arLoading ? (
+              <div
+                className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
+                style={{ borderColor: THEME.textInverse, borderTopColor: 'transparent' }}
+              />
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+                <span style={{ fontSize: '0.5rem', letterSpacing: '0.15em', fontFamily: "'Source Sans 3', sans-serif", fontWeight: 700 }}>
+                  AR
+                </span>
+              </>
+            )}
           </button>
+
+          {/* iOS AR Quick Look overlay — shown after USDZ export completes */}
+          {iosArUrl && (
+            <div
+              className="lg:hidden absolute inset-0 z-30 flex items-end justify-center pb-8"
+              style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+              onClick={() => setIosArUrl(prev => {
+                if (prev) URL.revokeObjectURL(prev)
+                return null
+              })}
+            >
+              <a
+                href={iosArUrl}
+                rel="ar"
+                onClick={(e) => e.stopPropagation()}
+                className="flex flex-col items-center justify-center gap-2 rounded-xl px-8 py-4"
+                style={{
+                  backgroundColor: THEME.accentNavy,
+                  color: THEME.textInverse,
+                  textDecoration: 'none',
+                  fontFamily: "'Source Sans 3', sans-serif",
+                }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+                <span style={{ fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Apri in AR
+                </span>
+                <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>
+                  Tocca per aprire AR Quick Look
+                </span>
+              </a>
+            </div>
+          )}
         </section>
 
         {/* Desktop sidebar — has max-lg:hidden built in */}

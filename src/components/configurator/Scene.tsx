@@ -6,6 +6,8 @@ import { useGLTF, useTexture, Environment, ContactShadows, OrbitControls } from 
 import * as THREE from 'three'
 import { useConfiguratorStore, UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
 import { setCaptureViews } from '@/lib/capture-ref'
+import { USDZExporter } from 'three/examples/jsm/exporters/USDZExporter.js'
+import { setUsdzExporter } from '@/lib/usdz-export-ref'
 import { XR, useXR, useXRHitTest, useXRInputSourceEvent } from '@react-three/xr'
 import { xrStore } from '@/stores/ar-store'
 
@@ -435,6 +437,21 @@ function StoolModel({ glbPath, modelId, disableInteractionRefs = false }: { glbP
     }
   }, [scene, modelId, metalMat, disableInteractionRefs])
 
+  // Register USDZ exporter — scene is mutated in-place by material effects,
+  // so parseAsync at call-time always reflects the current configured material.
+  // Guard with disableInteractionRefs so the AR-mode instance doesn't clobber
+  // or null-out the registration from the canonical studio-mode instance.
+  useEffect(() => {
+    if (disableInteractionRefs) return
+    const exporter = new USDZExporter()
+    setUsdzExporter(async () => {
+      const bytes = await exporter.parseAsync(scene)
+      return new Blob([bytes], { type: 'model/vnd.usdz+zip' })
+    })
+    return () => { setUsdzExporter(null) }
+    // exporter omitted from deps: its identity doesn't affect output, only scene ref matters
+  }, [scene, disableInteractionRefs])
+
   // Apply material and visibility
   useEffect(() => {
     scene.traverse((child) => {
@@ -611,9 +628,7 @@ function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }
 // ──────────────────────────────────────
 // Exported Canvas
 // ──────────────────────────────────────
-export default function ConfiguratorScene({ glbPath, modelId, onReady }: { glbPath: string; modelId: string; onReady?: () => void }) {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { onReady?.() }, [])
+export default function ConfiguratorScene({ glbPath, modelId }: { glbPath: string; modelId: string }) {
   return (
     <Canvas
       shadows={{ type: THREE.PCFSoftShadowMap }}
