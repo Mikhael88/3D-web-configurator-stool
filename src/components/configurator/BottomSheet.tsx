@@ -114,7 +114,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
                 transition: 'all 0.2s ease',
               }}
             >
-              TESSUTO {activeCategory === 'fabric' ? '▼' : '▲'}
+              MICROFIBRA {activeCategory === 'fabric' ? '▼' : '▲'}
             </button>
             <button
               onClick={() => toggleCategory('leather')}
@@ -132,7 +132,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
                 transition: 'all 0.2s ease',
               }}
             >
-              PELLE {activeCategory === 'leather' ? '▼' : '▲'}
+              ECOPELLE {activeCategory === 'leather' ? '▼' : '▲'}
             </button>
           </div>
 
