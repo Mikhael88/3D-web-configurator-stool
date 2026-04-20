@@ -114,7 +114,7 @@ export default function ConfigSidebar() {
           </div>
 
           <div className="mb-5">
-            <SubCategoryLabel label="Tessuti" />
+            <SubCategoryLabel label="Microfibra" />
             <div className="grid grid-cols-5 gap-3 mt-3">
               {fabrics.map(mat => (
                 <MaterialSwatch
@@ -128,7 +128,7 @@ export default function ConfigSidebar() {
           </div>
 
           <div>
-            <SubCategoryLabel label="Pelli" />
+            <SubCategoryLabel label="Ecopelle" />
             <div className="grid grid-cols-5 gap-3 mt-3">
               {leathers.map(mat => (
                 <MaterialSwatch
