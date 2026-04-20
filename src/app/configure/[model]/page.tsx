@@ -60,9 +60,23 @@ export default function ConfiguratorPage({
   const setInteracting = useConfiguratorStore(s => s.setInteracting)
   const [sheetExpanded, setSheetExpanded] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [arReady, setArReady] = useState(false)
+
   useEffect(() => {
-    setIsMobile(window.matchMedia('(max-width: 1023px)').matches)
+    const mql = window.matchMedia('(max-width: 1023px)')
+    setIsMobile(mql.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
   }, [])
+
+  useEffect(() => {
+    if (!isMobile) {
+      setArReady(false)
+      return
+    }
+    customElements.whenDefined('model-viewer').then(() => setArReady(true))
+  }, [isMobile])
 
   if (!modelConfig?.glbPath) notFound()
 
@@ -76,28 +90,6 @@ export default function ConfiguratorPage({
       className="h-screen w-screen overflow-hidden flex flex-col"
       style={{ backgroundColor: THEME.bgPage }}
     >
-      {isMobile && (
-        <>
-          <Script
-            src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
-            strategy="lazyOnload"
-          />
-          <model-viewer
-            id="ar-host"
-            src={modelConfig.glbPath ?? ''}
-            alt={`${modelConfig.name} modello 3D`}
-            ar
-            ar-modes="scene-viewer quick-look webxr"
-            style={{
-              position: 'absolute',
-              width: 1,
-              height: 1,
-              opacity: 0,
-              pointerEvents: 'none',
-            }}
-          />
-        </>
-      )}
       <main className="flex flex-1 overflow-hidden">
         {/* 3D Viewport */}
         <section
@@ -106,6 +98,28 @@ export default function ConfiguratorPage({
           onPointerUp={() => setInteracting(false)}
           onPointerCancel={() => setInteracting(false)}
         >
+          {isMobile && (
+            <>
+              <Script
+                src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
+                strategy="lazyOnload"
+              />
+              <model-viewer
+                id="ar-host"
+                src={modelConfig.glbPath ?? ''}
+                alt={`${modelConfig.name} modello 3D`}
+                ar
+                ar-modes="scene-viewer quick-look webxr"
+                style={{
+                  position: 'absolute',
+                  width: 1,
+                  height: 1,
+                  opacity: 0,
+                  pointerEvents: 'none',
+                }}
+              />
+            </>
+          )}
 
           {/* 3D Canvas */}
           <Suspense fallback={<LoadingScreen />}>
@@ -157,7 +171,7 @@ export default function ConfiguratorPage({
           {/* AR button — mobile only, bottom-right */}
           <button
             onClick={handleAR}
-            disabled={!isMobile}
+            disabled={!arReady}
             className="lg:hidden absolute bottom-4 right-4 z-20 flex flex-col items-center justify-center gap-1 rounded-lg"
             style={{
               width: 52,
