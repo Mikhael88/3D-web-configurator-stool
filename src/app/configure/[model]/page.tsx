@@ -1,10 +1,11 @@
 'use client'
 
-import { Suspense, use, useState } from 'react'
+import { Suspense, use, useState, useEffect } from 'react'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
 import { useConfiguratorStore } from '@/stores/configurator-store'
+import type { ModelViewerElement } from '@/types/model-viewer'
 import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
 import { MODELS } from '@/models'
@@ -58,12 +59,16 @@ export default function ConfiguratorPage({
   const modelConfig = MODELS.find(m => m.id === modelId)
   const setInteracting = useConfiguratorStore(s => s.setInteracting)
   const [sheetExpanded, setSheetExpanded] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    setIsMobile(window.matchMedia('(max-width: 1023px)').matches)
+  }, [])
 
   if (!modelConfig?.glbPath) notFound()
 
   const handleAR = () => {
-    const mv = document.querySelector('model-viewer') as HTMLElement & { activateAR: () => void }
-    mv?.activateAR()
+    const mv = document.getElementById('ar-host') as (ModelViewerElement | null)
+    mv?.activateAR?.()
   }
 
   return (
@@ -71,23 +76,16 @@ export default function ConfiguratorPage({
       className="h-screen w-screen overflow-hidden flex flex-col"
       style={{ backgroundColor: THEME.bgPage }}
     >
-      <main className="flex flex-1 overflow-hidden">
-        {/* 3D Viewport */}
-        <section
-          className="flex-1 relative"
-          onPointerDown={() => setInteracting(true)}
-          onPointerUp={() => setInteracting(false)}
-          onPointerCancel={() => setInteracting(false)}
-        >
-          {/* model-viewer CDN script — mobile AR */}
+      {isMobile && (
+        <>
           <Script
             src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
             strategy="lazyOnload"
           />
-
-          {/* Hidden model-viewer for AR activation — mobile only */}
           <model-viewer
+            id="ar-host"
             src={modelConfig.glbPath ?? ''}
+            alt={`${modelConfig.name} modello 3D`}
             ar
             ar-modes="scene-viewer quick-look webxr"
             style={{
@@ -98,6 +96,16 @@ export default function ConfiguratorPage({
               pointerEvents: 'none',
             }}
           />
+        </>
+      )}
+      <main className="flex flex-1 overflow-hidden">
+        {/* 3D Viewport */}
+        <section
+          className="flex-1 relative"
+          onPointerDown={() => setInteracting(true)}
+          onPointerUp={() => setInteracting(false)}
+          onPointerCancel={() => setInteracting(false)}
+        >
 
           {/* 3D Canvas */}
           <Suspense fallback={<LoadingScreen />}>

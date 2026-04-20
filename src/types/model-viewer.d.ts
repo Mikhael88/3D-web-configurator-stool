@@ -1,5 +1,11 @@
 import type React from 'react'
 
+export interface ModelViewerElement extends HTMLElement {
+  activateAR(): void
+  dismissAR(): void
+  readonly isPresenting: boolean
+}
+
 declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
