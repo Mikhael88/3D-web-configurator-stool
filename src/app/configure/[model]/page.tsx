@@ -69,8 +69,10 @@ export default function ConfiguratorPage({
     const glbUrl = `${BASE_URL}${modelConfig.glbPath}`
 
     if (isAndroid) {
+      const params = `file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(modelConfig.name ?? '')}`
+      const fallback = encodeURIComponent(BASE_URL)
       window.location.href =
-        `https://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(modelConfig.name ?? '')}`
+        `intent://arvr.google.com/scene-viewer/1.0?${params}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end`
       return
     }
 
