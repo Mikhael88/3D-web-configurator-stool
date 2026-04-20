@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, use, useState } from 'react'
+import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
 import { useConfiguratorStore } from '@/stores/configurator-store'
@@ -60,6 +61,11 @@ export default function ConfiguratorPage({
 
   if (!modelConfig?.glbPath) notFound()
 
+  const handleAR = () => {
+    const mv = document.querySelector('model-viewer') as HTMLElement & { activateAR: () => void }
+    mv?.activateAR()
+  }
+
   return (
     <div
       className="h-screen w-screen overflow-hidden flex flex-col"
@@ -73,6 +79,26 @@ export default function ConfiguratorPage({
           onPointerUp={() => setInteracting(false)}
           onPointerCancel={() => setInteracting(false)}
         >
+          {/* model-viewer CDN script — mobile AR */}
+          <Script
+            src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
+            strategy="lazyOnload"
+          />
+
+          {/* Hidden model-viewer for AR activation — mobile only */}
+          <model-viewer
+            src={modelConfig.glbPath ?? ''}
+            ar
+            ar-modes="scene-viewer quick-look webxr"
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              opacity: 0,
+              pointerEvents: 'none',
+            }}
+          />
+
           {/* 3D Canvas */}
           <Suspense fallback={<LoadingScreen />}>
             <ConfiguratorScene glbPath={modelConfig.glbPath!} modelId={modelId} />
@@ -119,6 +145,28 @@ export default function ConfiguratorPage({
               {modelConfig?.name ?? modelId.toUpperCase()}
             </span>
           </div>
+
+          {/* AR button — mobile only, bottom-right */}
+          <button
+            onClick={handleAR}
+            className="lg:hidden absolute bottom-4 right-4 z-20 flex flex-col items-center justify-center gap-1 rounded-lg"
+            style={{
+              width: 52,
+              height: 52,
+              backgroundColor: THEME.accentNavy,
+              color: THEME.textInverse,
+            }}
+            aria-label="Visualizza in realtà aumentata"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+            <span style={{ fontSize: '0.5rem', letterSpacing: '0.15em', fontFamily: "'Source Sans 3', sans-serif", fontWeight: 700 }}>
+              AR
+            </span>
+          </button>
         </section>
 
         {/* Desktop sidebar — has max-lg:hidden built in */}
