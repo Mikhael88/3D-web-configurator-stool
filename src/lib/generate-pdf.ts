@@ -1,6 +1,11 @@
 import { getCaptureViews } from '@/lib/capture-ref'
 import { UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
 
+const CATEGORY_DISPLAY: Record<string, string> = {
+  fabric: 'Microfibra',
+  leather: 'Ecopelle',
+}
+
 export async function generatePdf(modelId: string, upholsteryId: string): Promise<void> {
   const captureViews = getCaptureViews()
   if (!captureViews) return
@@ -62,7 +67,7 @@ export async function generatePdf(modelId: string, upholsteryId: string): Promis
   const colW = (pageW - margin * 2) / 3
 
   const summaryRows: Array<[string, string]> = [
-    ['Upholstery', `${upholstery.name} — ${upholstery.category.charAt(0).toUpperCase()}${upholstery.category.slice(1)}`],
+    ['Upholstery', `${upholstery.name} — ${CATEGORY_DISPLAY[upholstery.category] ?? upholstery.category}`],
     ['Structure Finish', 'Brushed Steel 316'],
   ]
 
