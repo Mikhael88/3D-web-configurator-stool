@@ -89,20 +89,26 @@ export default function ConfiguratorPage({
     const isAndroid = /android/i.test(navigator.userAgent)
 
     if (isAndroid) {
-      alert('[AR] step1: navigator.xr=' + (typeof navigator.xr))
+      const BASE_URL = 'https://3-d-web-configurator-stool.vercel.app'
+      const launchSceneViewer = () => {
+        const glbUrl = `${BASE_URL}${modelConfig!.glbPath}`
+        const params = `file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(modelConfig!.name ?? '')}`
+        const fallback = encodeURIComponent(BASE_URL)
+        window.location.href = `intent://arvr.google.com/scene-viewer/1.0?${params}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end`
+      }
+
+      // WebXR requires allow="xr-spatial-tracking" on the parent iframe.
+      // If blocked (SecurityError) or unsupported, fall back to Scene Viewer.
       if (navigator.xr) {
         navigator.xr.isSessionSupported('immersive-ar').then(supported => {
-          alert('[AR] step2: supported=' + supported)
           if (supported) {
-            xrStore.enterAR()
-              .then(() => alert('[AR] step3: enterAR resolved'))
-              .catch(err => alert('[AR] step3: enterAR failed: ' + err))
+            xrStore.enterAR().catch(() => launchSceneViewer())
           } else {
-            alert('AR non supportato su questo dispositivo.')
+            launchSceneViewer()
           }
-        }).catch(err => alert('[AR] step2: isSessionSupported failed: ' + err))
+        }).catch(() => launchSceneViewer())
       } else {
-        alert('AR non supportato su questo browser.')
+        launchSceneViewer()
       }
       return
     }
