@@ -157,6 +157,7 @@ export default function ConfiguratorPage({
           {/* AR button — mobile only, bottom-right */}
           <button
             onClick={handleAR}
+            disabled={!isMobile}
             className="lg:hidden absolute bottom-4 right-4 z-20 flex flex-col items-center justify-center gap-1 rounded-lg"
             style={{
               width: 52,
