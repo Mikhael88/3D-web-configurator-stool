@@ -37,4 +37,11 @@ export const MODELS: ModelConfig[] = [
     imagePath: '/c114.webp',
     description: 'Sgabello essenziale e minimale in acciaio inox AISI 316L lucido.\nSeduta imbottita compatta e confortevole.\nRotazione a 360° senza ritorno per massima libertà.',
   },
+  {
+    id: 'angel-poltrona',
+    name: 'Angel',
+    glbPath: '/angel-poltrona.glb',
+    imagePath: '/angel-poltrona.webp',
+    description: 'Poltrona lounge in acciaio inox AISI 316L lucido.\nStruttura ergonomica per un comfort superiore.\nRivestimento personalizzabile in microfibra o ecopelle.',
+  },
 ]

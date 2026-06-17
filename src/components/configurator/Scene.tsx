@@ -7,7 +7,9 @@ import * as THREE from 'three'
 import { useConfiguratorStore, UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
 import { setCaptureViews } from '@/lib/capture-ref'
 import { USDZExporter } from 'three/examples/jsm/exporters/USDZExporter.js'
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'
 import { setUsdzExporter } from '@/lib/usdz-export-ref'
+import { setGlbExporter } from '@/lib/glb-export-ref'
 import { XR, useXR, useXRHitTest, useXRInputSourceEvent } from '@react-three/xr'
 import { xrStore } from '@/stores/ar-store'
 
@@ -42,7 +44,7 @@ function matName(mesh: THREE.Mesh): string {
 }
 
 // Nodes whose name doesn't end in -tessuto but carry the upholstery material
-const UPHOLSTERY_NODE_NAMES = new Set(['c114-seduta-acciaio'])
+const UPHOLSTERY_NODE_NAMES = new Set(['c114-seduta-acciaio', 'angel-seduta'])
 
 // Meshes permanently hidden (per-model overrides)
 const HIDDEN_MESH_NAMES = new Set([
@@ -437,19 +439,36 @@ function StoolModel({ glbPath, modelId, disableInteractionRefs = false }: { glbP
     }
   }, [scene, modelId, metalMat, disableInteractionRefs])
 
-  // Register USDZ exporter — scene is mutated in-place by material effects,
-  // so parseAsync at call-time always reflects the current configured material.
+  // Register USDZ + GLB exporters — scene is mutated in-place by material effects,
+  // so parsing at call-time always reflects the current configured material.
   // Guard with disableInteractionRefs so the AR-mode instance doesn't clobber
   // or null-out the registration from the canonical studio-mode instance.
   useEffect(() => {
     if (disableInteractionRefs) return
-    const exporter = new USDZExporter()
+    const usdzExporter = new USDZExporter()
     setUsdzExporter(async () => {
-      const bytes = await exporter.parseAsync(scene)
+      const bytes = await usdzExporter.parseAsync(scene)
       return new Blob([bytes], { type: 'model/vnd.usdz+zip' })
     })
-    return () => { setUsdzExporter(null) }
-    // exporter omitted from deps: its identity doesn't affect output, only scene ref matters
+
+    const glbExporter = new GLTFExporter()
+    setGlbExporter(() => new Promise((resolve, reject) => {
+      glbExporter.parse(
+        scene,
+        (result) => {
+          const buffer = result instanceof ArrayBuffer ? result : new TextEncoder().encode(JSON.stringify(result)).buffer
+          resolve(new Blob([buffer], { type: 'model/gltf-binary' }))
+        },
+        reject,
+        { binary: true },
+      )
+    }))
+
+    return () => {
+      setUsdzExporter(null)
+      setGlbExporter(null)
+    }
+    // exporters omitted from deps: identity doesn't affect output, only scene ref matters
   }, [scene, disableInteractionRefs])
 
   // Apply material and visibility

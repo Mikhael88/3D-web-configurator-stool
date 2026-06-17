@@ -1,10 +1,11 @@
 'use client'
 
-import { Suspense, use, useState, useEffect, useRef } from 'react'
+import React, { Suspense, use, useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
 import { useConfiguratorStore } from '@/stores/configurator-store'
 import { getUsdzExporter } from '@/lib/usdz-export-ref'
+import { getGlbExporter } from '@/lib/glb-export-ref'
 import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
 import { MODELS } from '@/models'
@@ -48,6 +49,69 @@ function LoadingScreen() {
       </div>
     </div>
   )
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function DevExportPanel({ modelId, upholsteryId }: { modelId: string; upholsteryId: string }) {
+  const [status, setStatus] = useState<string | null>(null)
+
+  const slug = `${modelId}-${upholsteryId}`
+
+  const exportGlb = async () => {
+    const fn = getGlbExporter()
+    if (!fn) { setStatus('Scene not ready'); return }
+    setStatus('Exporting GLB…')
+    try {
+      const blob = await fn()
+      downloadBlob(blob, `${slug}.glb`)
+      setStatus(`Saved: ${slug}.glb`)
+    } catch (e) {
+      setStatus(`GLB error: ${e}`)
+    }
+  }
+
+  const exportUsdz = async () => {
+    const fn = getUsdzExporter()
+    if (!fn) { setStatus('Scene not ready'); return }
+    setStatus('Exporting USDZ…')
+    try {
+      const blob = await fn()
+      downloadBlob(blob, `${slug}.usdz`)
+      setStatus(`Saved: ${slug}.usdz`)
+    } catch (e) {
+      setStatus(`USDZ error: ${e}`)
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 16, left: 16, zIndex: 9999,
+      backgroundColor: 'rgba(0,0,0,0.85)', color: '#fff',
+      padding: '10px 14px', borderRadius: 8, fontFamily: 'monospace', fontSize: 12,
+      display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220,
+    }}>
+      <div style={{ opacity: 0.5, marginBottom: 2 }}>DEV EXPORT</div>
+      <div>{slug}</div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button onClick={exportGlb} style={btnStyle}>GLB</button>
+        <button onClick={exportUsdz} style={btnStyle}>USDZ</button>
+      </div>
+      {status && <div style={{ opacity: 0.7, fontSize: 11 }}>{status}</div>}
+    </div>
+  )
+}
+
+const btnStyle: React.CSSProperties = {
+  flex: 1, padding: '4px 0', backgroundColor: '#728473', color: '#fff',
+  border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'monospace', fontSize: 12,
 }
 
 export default function ConfiguratorPage({
@@ -273,6 +337,11 @@ export default function ConfiguratorPage({
         {/* Desktop sidebar — has max-lg:hidden built in */}
         <ConfigSidebar />
       </main>
+
+      {/* Dev export panel — only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <DevExportPanel modelId={modelId} upholsteryId={upholsteryId} />
+      )}
 
       {/* Mobile bottom sheet — hidden on desktop */}
       <BottomSheet

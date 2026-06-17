@@ -141,11 +141,43 @@ export default function Home() {
         </span>
       </div>
 
-      {/* Product grid — 2×2 mobile, 4 col full-height desktop */}
-      <div className="grid grid-cols-2 grid-rows-2 flex-1 lg:flex lg:flex-row overflow-hidden">
+      {/* Product grid — 3×2 */}
+      <div className="grid grid-cols-3 grid-rows-2 flex-1 overflow-hidden">
         {MODELS.map(model => (
           <ProductCard key={model.id} model={model} />
         ))}
+        <div
+          className="relative flex flex-col overflow-hidden"
+          style={{
+            background: THEME.bgCard,
+            borderRight: `1px solid ${THEME.borderSubtle}`,
+            borderBottom: `1px solid rgba(44,62,80,0.04)`,
+            opacity: 0.45,
+          }}
+        >
+          <div
+            className="flex-1 flex flex-col items-center justify-center gap-2"
+            style={{ background: THEME.bgCardImage, minHeight: '160px' }}
+          >
+            <div style={{ width: 24, height: 1, background: THEME.borderMid }} />
+            <span
+              style={{
+                fontSize: '0.55rem',
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                color: THEME.textMuted,
+                fontFamily: "'Source Sans 3', sans-serif",
+              }}
+            >
+              Prossimamente
+            </span>
+            <div style={{ width: 24, height: 1, background: THEME.borderMid }} />
+          </div>
+          <div
+            className="px-4 py-3 flex-shrink-0"
+            style={{ borderTop: `1px solid ${THEME.borderSubtle}` }}
+          />
+        </div>
       </div>
 
       {/* Bottom hint — mobile only */}
