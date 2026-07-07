@@ -182,6 +182,35 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
         </div>
 
         {/* Actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {MODELS.find(m => m.id === modelId)?.technicalDrawingPath && (
+            <a
+              href={MODELS.find(m => m.id === modelId)!.technicalDrawingPath!}
+              download
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                padding: '12px 0',
+                border: `1px solid ${THEME.accentNavy}`,
+                background: 'transparent',
+                fontSize: '0.6rem',
+                letterSpacing: '0.2em',
+                fontWeight: 700,
+                color: THEME.accentNavy,
+                textDecoration: 'none',
+                fontFamily: "'Source Sans 3', sans-serif",
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              SCHEDA TECNICA
+            </a>
+          )}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={handleSavePdf}
@@ -221,6 +250,7 @@ export default function BottomSheet({ modelId, expanded, onToggle, onCollapse }:
           >
             CONTATTO
           </a>
+        </div>
         </div>
 
         {/* Description */}

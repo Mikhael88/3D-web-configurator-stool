@@ -182,7 +182,30 @@ export default function ConfigSidebar() {
           backgroundColor: THEME.bgSidebar,
         }}
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-3">
+          {modelConfig?.technicalDrawingPath && (
+            <a
+              href={modelConfig.technicalDrawingPath}
+              download
+              className="w-full py-4 flex items-center justify-center gap-2 text-xs uppercase tracking-[0.3em] font-medium transition-all duration-300"
+              style={{
+                border: `1px solid ${THEME.accentNavy}`,
+                color: THEME.accentNavy,
+                backgroundColor: 'transparent',
+                textDecoration: 'none',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = THEME.bgInput)}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Scheda Tecnica
+            </a>
+          )}
+          <div className="grid grid-cols-2 gap-3">
           {/* Save PDF */}
           <button
             onClick={handleSavePdf}
@@ -228,6 +251,7 @@ export default function ConfigSidebar() {
             </svg>
             Contatto
           </a>
+        </div>
         </div>
       </div>
     </aside>

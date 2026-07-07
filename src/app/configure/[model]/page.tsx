@@ -153,11 +153,11 @@ export default function ConfiguratorPage({
     const isAndroid = /android/i.test(navigator.userAgent)
 
     if (isAndroid) {
-      const BASE_URL = 'https://3-d-web-configurator-stool.vercel.app'
+      const BASE_URL = window.location.origin
       const launchSceneViewer = () => {
         const glbUrl = `${BASE_URL}${modelConfig!.glbPath}`
         const params = `file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(modelConfig!.name ?? '')}`
-        const fallback = encodeURIComponent(BASE_URL)
+        const fallback = encodeURIComponent(window.location.href)
         window.location.href = `intent://arvr.google.com/scene-viewer/1.0?${params}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end`
       }
 
