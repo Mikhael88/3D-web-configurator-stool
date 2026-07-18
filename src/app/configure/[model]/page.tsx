@@ -6,11 +6,11 @@ import { notFound } from 'next/navigation'
 import { useConfiguratorStore } from '@/stores/configurator-store'
 import { getUsdzExporter } from '@/lib/usdz-export-ref'
 import { getGlbExporter } from '@/lib/glb-export-ref'
+import { launchSceneViewer, uploadArModel } from '@/lib/ar-launch'
 import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
 import { MODELS } from '@/models'
 import { THEME } from '@/lib/theme'
-import { xrStore } from '@/stores/ar-store'
 
 const ConfiguratorScene = dynamic(
   () => import('@/components/configurator/Scene'),
@@ -128,58 +128,45 @@ export default function ConfiguratorPage({
   const upholsteryId = useConfiguratorStore(s => s.upholsteryId)
   const exportCancelRef = useRef(false)
 
-  // Reset iOS AR URL whenever material changes — next tap re-exports with new material.
+  // Reset iOS AR link whenever material changes — next tap re-exports with new material.
   useEffect(() => {
     exportCancelRef.current = true
-    setIosArUrl(prev => {
-      if (prev) URL.revokeObjectURL(prev)
-      return null
-    })
+    setIosArUrl(null)
   }, [upholsteryId])
-
-  // Revoke blob URL on unmount to avoid memory leaks.
-  useEffect(() => {
-    return () => {
-      setIosArUrl(prev => {
-        if (prev) URL.revokeObjectURL(prev)
-        return null
-      })
-    }
-  }, [])
 
   if (!modelConfig?.glbPath) notFound()
 
+  // AR hand-off: export the *configured* scene (current material applied) and
+  // hand it to the native viewer. Scene Viewer / Quick Look fetch the model
+  // over plain HTTPS, so the exported file is uploaded to /api/ar-model and
+  // the viewer is pointed at that same-origin URL — blob: URLs don't work
+  // (Quick Look fails silently with them on recent iOS).
   const handleAR = async () => {
     const isAndroid = /android/i.test(navigator.userAgent)
 
     if (isAndroid) {
-      const BASE_URL = window.location.origin
-      const launchSceneViewer = () => {
-        const glbUrl = `${BASE_URL}${modelConfig!.glbPath}`
-        const params = `file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(modelConfig!.name ?? '')}`
-        const fallback = encodeURIComponent(window.location.href)
-        window.location.href = `intent://arvr.google.com/scene-viewer/1.0?${params}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end`
+      const exportFn = getGlbExporter()
+      if (!exportFn) {
+        alert('Scena 3D non ancora pronta. Riprova tra un momento.')
+        return
       }
-
-      // WebXR requires allow="xr-spatial-tracking" on the parent iframe.
-      // If blocked (SecurityError) or unsupported, fall back to Scene Viewer.
-      if (navigator.xr) {
-        navigator.xr.isSessionSupported('immersive-ar').then(supported => {
-          if (supported) {
-            xrStore.enterAR().catch(() => launchSceneViewer())
-          } else {
-            launchSceneViewer()
-          }
-        }).catch(() => launchSceneViewer())
-      } else {
-        launchSceneViewer()
+      setArLoading(true)
+      try {
+        const blob = await exportFn()
+        const glbUrl = await uploadArModel(blob, 'glb')
+        launchSceneViewer(glbUrl, modelConfig!.name ?? '', window.location.href)
+      } catch (err) {
+        console.error('[AR] GLB export/upload failed:', err)
+        alert('Errore nella preparazione dell\'AR.')
+      } finally {
+        setArLoading(false)
       }
       return
     }
 
-    // iOS: export USDZ with configured material, then show AR Quick Look link.
-    // Two-step (export → user taps link) is required because iOS Safari blocks
-    // programmatic <a>.click() after async/await.
+    // iOS: export USDZ with configured material, upload, then show AR Quick
+    // Look link. Two-step (export → user taps link) is required because iOS
+    // Safari blocks programmatic <a>.click() after async/await.
     const exportFn = getUsdzExporter()
     if (!exportFn) {
       alert('Scena 3D non ancora pronta. Riprova tra un momento.')
@@ -190,8 +177,8 @@ export default function ConfiguratorPage({
     setArLoading(true)
     try {
       const blob = await exportFn()
+      const url = await uploadArModel(blob, 'usdz')
       if (exportCancelRef.current) return // material changed mid-export, discard
-      const url = URL.createObjectURL(blob)
       setIosArUrl(url)
     } catch (err) {
       if (!exportCancelRef.current) {
@@ -301,10 +288,7 @@ export default function ConfiguratorPage({
             <div
               className="lg:hidden absolute inset-0 z-30 flex items-end justify-center pb-8"
               style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-              onClick={() => setIosArUrl(prev => {
-                if (prev) URL.revokeObjectURL(prev)
-                return null
-              })}
+              onClick={() => setIosArUrl(null)}
             >
               <a
                 href={iosArUrl}

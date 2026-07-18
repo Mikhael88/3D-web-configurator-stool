@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, useTexture, Environment, ContactShadows, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -10,8 +10,6 @@ import { USDZExporter } from 'three/examples/jsm/exporters/USDZExporter.js'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'
 import { setUsdzExporter } from '@/lib/usdz-export-ref'
 import { setGlbExporter } from '@/lib/glb-export-ref'
-import { XR, useXR, useXRHitTest, useXRInputSourceEvent } from '@react-three/xr'
-import { xrStore } from '@/stores/ar-store'
 
 // ──────────────────────────────────────
 // Mesh targets
@@ -332,6 +330,18 @@ const ALL_TEXTURE_PATHS: string[] = [...new Set([
 // path → index in the array above (stable at module load time)
 const TEXTURE_IDX = new Map(ALL_TEXTURE_PATHS.map((p, i) => [p, i]))
 
+// Configure a texture for tiling. Works on a clone so the shared useTexture
+// cache entry is never mutated (react-hooks/immutability + cross-material
+// repeat/colorSpace bleed).
+function tiledTexture(source: THREE.Texture, srgb: boolean): THREE.Texture {
+  const t = source.clone()
+  t.wrapS = t.wrapT = THREE.RepeatWrapping
+  t.repeat.set(2, 2)
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace
+  t.needsUpdate = true
+  return t
+}
+
 // ──────────────────────────────────────
 // Stool Model
 // ──────────────────────────────────────
@@ -351,17 +361,8 @@ function StoolModel({ glbPath, modelId, disableInteractionRefs = false }: { glbP
 
     let upholsteryMat: THREE.MeshStandardMaterial
     if (m.texturePath && m.normalPath) {
-      const diffuse = allTextures[TEXTURE_IDX.get(m.texturePath)!]
-      const normal  = allTextures[TEXTURE_IDX.get(m.normalPath)!]
-
-      diffuse.wrapS = diffuse.wrapT = THREE.RepeatWrapping
-      diffuse.repeat.set(2, 2)
-      diffuse.colorSpace = THREE.SRGBColorSpace
-      diffuse.needsUpdate = true
-
-      normal.wrapS = normal.wrapT = THREE.RepeatWrapping
-      normal.repeat.set(2, 2)
-      normal.needsUpdate = true
+      const diffuse = tiledTexture(allTextures[TEXTURE_IDX.get(m.texturePath)!], true)
+      const normal  = tiledTexture(allTextures[TEXTURE_IDX.get(m.normalPath)!], false)
 
       upholsteryMat = new THREE.MeshStandardMaterial({
         map: diffuse,
@@ -549,76 +550,9 @@ function CaptureHandler() {
 }
 
 // ──────────────────────────────────────
-// AR Scene — hit-test reticle + tap-to-place model
-// ──────────────────────────────────────
-function ARContent({ glbPath, modelId }: { glbPath: string; modelId: string }) {
-  const reticleRef = useRef<THREE.Mesh>(null)
-  const modelGroupRef = useRef<THREE.Group>(null)
-  const [placed, setPlaced] = useState(false)
-  const placedRef = useRef(false)
-  const hitMatrix = useRef(new THREE.Matrix4())
-
-  useEffect(() => { placedRef.current = placed }, [placed])
-
-  useXRHitTest(
-    (results: XRHitTestResult[], getWorldMatrix: (target: THREE.Matrix4, result: XRHitTestResult) => boolean) => {
-      if (!reticleRef.current || !modelGroupRef.current) return
-      if (results.length === 0) {
-        reticleRef.current.visible = false
-        return
-      }
-      getWorldMatrix(hitMatrix.current, results[0])
-
-      if (!placedRef.current) {
-        reticleRef.current.visible = true
-        reticleRef.current.matrixAutoUpdate = false
-        reticleRef.current.matrixWorldAutoUpdate = false
-        reticleRef.current.matrix.copy(hitMatrix.current)
-        reticleRef.current.matrixWorld.copy(hitMatrix.current)
-        modelGroupRef.current.matrixAutoUpdate = false
-        modelGroupRef.current.matrixWorldAutoUpdate = false
-        modelGroupRef.current.matrix.copy(hitMatrix.current)
-        modelGroupRef.current.matrixWorld.copy(hitMatrix.current)
-      }
-    },
-    'viewer',
-  )
-
-  useXRInputSourceEvent('all', 'select', () => {
-    if (!placedRef.current) {
-      placedRef.current = true
-      setPlaced(true)
-      if (reticleRef.current) reticleRef.current.visible = false
-    }
-  }, [])
-
-  return (
-    <>
-      {/* Surface reticle */}
-      <mesh ref={reticleRef} visible={false} matrixAutoUpdate={false} matrixWorldAutoUpdate={false}>
-        <ringGeometry args={[0.07, 0.1, 32]} />
-        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Model follows reticle until tapped, then anchored */}
-      <group ref={modelGroupRef} matrixAutoUpdate={false} matrixWorldAutoUpdate={false}>
-        <StoolModel glbPath={glbPath} modelId={modelId} disableInteractionRefs />
-      </group>
-    </>
-  )
-}
-
-// ──────────────────────────────────────
 // Full Scene
 // ──────────────────────────────────────
 function SceneContent({ glbPath, modelId }: { glbPath: string; modelId: string }) {
-  const session = useXR((state) => state.session)
-  const isAR = session != null
-
-  if (isAR) {
-    return <ARContent glbPath={glbPath} modelId={modelId} />
-  }
-
   return (
     <>
       <color attach="background" args={['#ffffff']} />
@@ -665,9 +599,7 @@ export default function ConfiguratorScene({ glbPath, modelId }: { glbPath: strin
         outputColorSpace: THREE.SRGBColorSpace,
       }}
     >
-      <XR store={xrStore}>
-        <SceneContent glbPath={glbPath} modelId={modelId} />
-      </XR>
+      <SceneContent glbPath={glbPath} modelId={modelId} />
     </Canvas>
   )
 }
