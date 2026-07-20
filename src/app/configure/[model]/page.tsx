@@ -4,8 +4,8 @@ import React, { Suspense, use, useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
 import { useConfiguratorStore } from '@/stores/configurator-store'
-import { getUsdzExporter } from '@/lib/usdz-export-ref'
-import { getGlbExporter } from '@/lib/glb-export-ref'
+import { getUsdzExporter, onUsdzExporterReady } from '@/lib/usdz-export-ref'
+import { getGlbExporter, onGlbExporterReady } from '@/lib/glb-export-ref'
 import { launchSceneViewer, uploadArModel } from '@/lib/ar-launch'
 import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
@@ -125,8 +125,19 @@ export default function ConfiguratorPage({
   const [sheetExpanded, setSheetExpanded] = useState(true)
   const [arLoading, setArLoading] = useState(false)
   const [iosArUrl, setIosArUrl] = useState<string | null>(null)
+  const [sceneReady, setSceneReady] = useState(false)
   const upholsteryId = useConfiguratorStore(s => s.upholsteryId)
   const exportCancelRef = useRef(false)
+
+  // Track 3D scene readiness — the exporters are registered by Scene.tsx
+  // after the GLB loads and useEffect runs. Until then the AR button stays
+  // disabled to avoid the "Scena 3D non ancora pronta" alert.
+  useEffect(() => {
+    let ready = false
+    const offGlb = onGlbExporterReady((r) => { if (r) ready = true; else ready = false; setSceneReady(ready) })
+    const offUsdz = onUsdzExporterReady((r) => { if (r) ready = true; else ready = false; setSceneReady(ready) })
+    return () => { offGlb(); offUsdz() }
+  }, [])
 
   // Reset iOS AR link whenever material changes — next tap re-exports with new material.
   useEffect(() => {
@@ -253,18 +264,24 @@ export default function ConfiguratorPage({
           {/* AR button — mobile only, bottom-right */}
           <button
             onClick={handleAR}
-            disabled={arLoading}
+            disabled={arLoading || !sceneReady}
             className="lg:hidden absolute bottom-4 right-4 z-20 flex flex-col items-center justify-center gap-1 rounded-lg"
             style={{
               width: 52,
               height: 52,
               backgroundColor: THEME.accentNavy,
               color: THEME.textInverse,
-              opacity: arLoading ? 0.6 : 1,
+              opacity: arLoading || !sceneReady ? 0.4 : 1,
+              transition: 'opacity 0.3s ease',
             }}
             aria-label="Visualizza in realtà aumentata"
           >
             {arLoading ? (
+              <div
+                className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
+                style={{ borderColor: THEME.textInverse, borderTopColor: 'transparent' }}
+              />
+            ) : !sceneReady ? (
               <div
                 className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
                 style={{ borderColor: THEME.textInverse, borderTopColor: 'transparent' }}
