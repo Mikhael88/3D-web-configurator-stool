@@ -1,12 +1,12 @@
 'use client'
 
-import React, { Suspense, use, useState, useEffect, useRef } from 'react'
+import React, { Suspense, use, useState, useEffect, useRef, useMemo, useSyncExternalStore } from 'react'
 import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
-import { useConfiguratorStore } from '@/stores/configurator-store'
-import { getUsdzExporter, onUsdzExporterReady } from '@/lib/usdz-export-ref'
-import { getGlbExporter, onGlbExporterReady } from '@/lib/glb-export-ref'
-import { sceneViewerIntentUrl, uploadArModel } from '@/lib/ar-launch'
+import { useConfiguratorStore, UPHOLSTERY_MATERIALS } from '@/stores/configurator-store'
+import { getUsdzExporter } from '@/lib/usdz-export-ref'
+import { getGlbExporter } from '@/lib/glb-export-ref'
+import { sceneViewerIntentUrl } from '@/lib/ar-launch'
 import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
 import { MODELS } from '@/models'
@@ -65,6 +65,54 @@ function DevExportPanel({ modelId, upholsteryId }: { modelId: string; upholstery
 
   const slug = `${modelId}-${upholsteryId}`
 
+  // Batch export: loop every material, export GLB+USDZ of the live configured
+  // scene, POST each to /api/dev-export which writes public/models/{glb|usdz}/.
+  // Auto-runs when the page is opened with ?batchexport (used to generate the
+  // static AR variants). document.title doubles as a poll-able progress signal.
+  const batchRunning = useRef(false)
+  const runBatch = async () => {
+    if (batchRunning.current) return
+    batchRunning.current = true
+    const setUpholstery = useConfiguratorStore.getState().setUpholstery
+    const settle = () =>
+      new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 250))))
+    try {
+      for (const [i, mat] of UPHOLSTERY_MATERIALS.entries()) {
+        const name = `${modelId}-${mat.id}`
+        document.title = `BATCH ${i + 1}/${UPHOLSTERY_MATERIALS.length} ${name}`
+        setStatus(`Batch ${i + 1}/${UPHOLSTERY_MATERIALS.length}: ${name}`)
+        setUpholstery(mat.id)
+        await settle()
+        for (const [kind, fn] of [['glb', getGlbExporter()], ['usdz', getUsdzExporter()]] as const) {
+          if (!fn) throw new Error('exporter not ready')
+          const blob = await fn()
+          const res = await fetch(`/api/dev-export?name=${name}.${kind}`, { method: 'POST', body: blob })
+          if (!res.ok) throw new Error(`save ${name}.${kind} failed (${res.status})`)
+        }
+      }
+      document.title = `BATCH DONE ${modelId}`
+      setStatus('Batch done')
+    } catch (e) {
+      document.title = `BATCH ERROR ${modelId}`
+      setStatus(`Batch error: ${e}`)
+    } finally {
+      batchRunning.current = false
+    }
+  }
+
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has('batchexport')) return
+    // Wait for the exporters (registered once the GLB is loaded), then run.
+    const t = setInterval(() => {
+      if (getGlbExporter() && getUsdzExporter()) {
+        clearInterval(t)
+        runBatch()
+      }
+    }, 500)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const exportGlb = async () => {
     const fn = getGlbExporter()
     if (!fn) { setStatus('Scene not ready'); return }
@@ -103,6 +151,7 @@ function DevExportPanel({ modelId, upholsteryId }: { modelId: string; upholstery
       <div style={{ display: 'flex', gap: 6 }}>
         <button onClick={exportGlb} style={btnStyle}>GLB</button>
         <button onClick={exportUsdz} style={btnStyle}>USDZ</button>
+        <button onClick={runBatch} style={btnStyle}>ALL</button>
       </div>
       {status && <div style={{ opacity: 0.7, fontSize: 11 }}>{status}</div>}
     </div>
@@ -123,68 +172,34 @@ export default function ConfiguratorPage({
   const modelConfig = MODELS.find(m => m.id === modelId)
   const setInteracting = useConfiguratorStore(s => s.setInteracting)
   const [sheetExpanded, setSheetExpanded] = useState(true)
-  const [arLoading, setArLoading] = useState(false)
-  // Prepared AR link shown in the two-tap overlay. Two-tap is mandatory on
-  // both platforms: user activation expires during the export/upload await,
-  // so a programmatic launch afterwards is blocked (popup blocker / intent
-  // navigation refused). android=true → Scene Viewer intent anchor.
-  const [arLink, setArLink] = useState<{ href: string; android: boolean } | null>(null)
-  const [sceneReady, setSceneReady] = useState(false)
   const upholsteryId = useConfiguratorStore(s => s.upholsteryId)
-  const exportCancelRef = useRef(false)
 
-  // Track 3D scene readiness — the exporters are registered by Scene.tsx
-  // after the GLB loads and useEffect runs. Until then the AR button stays
-  // disabled to avoid the "Scena 3D non ancora pronta" alert.
-  useEffect(() => {
-    let ready = false
-    const offGlb = onGlbExporterReady((r) => { if (r) ready = true; else ready = false; setSceneReady(ready) })
-    const offUsdz = onUsdzExporterReady((r) => { if (r) ready = true; else ready = false; setSceneReady(ready) })
-    return () => { offGlb(); offUsdz() }
-  }, [])
-
-  // Reset AR link whenever material changes — next tap re-exports with new material.
-  useEffect(() => {
-    exportCancelRef.current = true
-    setArLink(null)
-  }, [upholsteryId])
+  // AR link to a pre-exported static variant (public/models/{glb,usdz}/
+  // <model>-<material>.<ext> — generated offline via DevExportPanel's batch
+  // export, see /api/dev-export). No runtime export/upload, so the href is
+  // known immediately and a single tap launches the viewer — this also
+  // sidesteps Vercel's ~4.5MB request body cap, which the old runtime-export
+  // + upload approach silently exceeded.
+  // navigator/location are only available post-mount, so the link is derived
+  // from a client/server snapshot flag rather than computed during SSR
+  // (avoids a hydration mismatch on the anchor's href/target/rel).
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
+  const ar = useMemo(() => {
+    if (!mounted) return null
+    const isAndroid = /android/i.test(navigator.userAgent)
+    const slug = `${modelId}-${upholsteryId}`
+    if (isAndroid) {
+      const glbUrl = new URL(`/models/glb/${slug}.glb`, window.location.origin).toString()
+      return { href: sceneViewerIntentUrl(glbUrl, modelConfig?.name ?? '', window.location.href), android: true }
+    }
+    return { href: `/models/usdz/${slug}.usdz`, android: false }
+  }, [mounted, modelId, upholsteryId, modelConfig])
 
   if (!modelConfig?.glbPath) notFound()
-
-  // AR hand-off: export the *configured* scene (current material applied) and
-  // hand it to the native viewer. Scene Viewer / Quick Look fetch the model
-  // over plain HTTPS, so the exported file is uploaded to /api/ar-model and
-  // the viewer is pointed at that same-origin URL — blob: URLs don't work
-  // (Quick Look fails silently with them on recent iOS).
-  const handleAR = async () => {
-    const isAndroid = /android/i.test(navigator.userAgent)
-
-    const exportFn = isAndroid ? getGlbExporter() : getUsdzExporter()
-    if (!exportFn) {
-      alert('Scena 3D non ancora pronta. Riprova tra un momento.')
-      return
-    }
-
-    exportCancelRef.current = false
-    setArLoading(true)
-    try {
-      const blob = await exportFn()
-      const url = await uploadArModel(blob, isAndroid ? 'glb' : 'usdz')
-      if (exportCancelRef.current) return // material changed mid-export, discard
-      setArLink(
-        isAndroid
-          ? { href: sceneViewerIntentUrl(url, modelConfig!.name ?? '', window.location.href), android: true }
-          : { href: url, android: false }
-      )
-    } catch (err) {
-      if (!exportCancelRef.current) {
-        console.error('[AR] export/upload failed:', err)
-        alert('Errore nella preparazione dell\'AR.')
-      }
-    } finally {
-      setArLoading(false)
-    }
-  }
 
   return (
     <div
@@ -246,92 +261,47 @@ export default function ConfiguratorPage({
             </span>
           </div>
 
-          {/* AR button — mobile only, bottom-right */}
-          <button
-            onClick={handleAR}
-            disabled={arLoading || !sceneReady}
+          {/* AR button — mobile only, bottom-right. Links straight to a
+              pre-exported static variant, so one tap launches the viewer.
+              Android: target="_blank" gives the intent:// URL a top-level
+              navigation — Chrome refuses intent navigations inside iframes
+              (this app runs embedded in a WordPress iframe). iOS: rel="ar"
+              needs an <img> as first child or Safari won't treat the anchor
+              as a Quick Look launcher. */}
+          <a
+            href={ar?.href ?? '#'}
+            {...(ar?.android ? { target: '_blank', rel: 'noopener' } : { rel: 'ar' })}
+            onClick={(e) => { if (!ar) e.preventDefault() }}
             className="lg:hidden absolute bottom-4 right-4 z-20 flex flex-col items-center justify-center gap-1 rounded-lg"
             style={{
               width: 52,
               height: 52,
               backgroundColor: THEME.accentNavy,
               color: THEME.textInverse,
-              opacity: arLoading || !sceneReady ? 0.4 : 1,
+              opacity: ar ? 1 : 0.4,
+              textDecoration: 'none',
               transition: 'opacity 0.3s ease',
             }}
             aria-label="Visualizza in realtà aumentata"
           >
-            {arLoading ? (
-              <div
-                className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
-                style={{ borderColor: THEME.textInverse, borderTopColor: 'transparent' }}
+            {ar && !ar.android && (
+              <img
+                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                alt=""
+                width={1}
+                height={1}
+                style={{ position: 'absolute', opacity: 0 }}
               />
-            ) : !sceneReady ? (
-              <div
-                className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
-                style={{ borderColor: THEME.textInverse, borderTopColor: 'transparent' }}
-              />
-            ) : (
-              <>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-                <span style={{ fontSize: '0.5rem', letterSpacing: '0.15em', fontFamily: "'Source Sans 3', sans-serif", fontWeight: 700 }}>
-                  AR
-                </span>
-              </>
             )}
-          </button>
-
-          {/* AR overlay — shown after export/upload completes. Second tap is
-              what actually launches the viewer (fresh user gesture required).
-              Android: target="_blank" gives the intent:// URL a top-level
-              navigation — Chrome refuses intent navigations inside iframes.
-              iOS: rel="ar" needs an <img> as first child or Safari won't
-              treat the anchor as a Quick Look launcher. */}
-          {arLink && (
-            <div
-              className="lg:hidden absolute inset-0 z-30 flex items-end justify-center pb-8"
-              style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-              onClick={() => setArLink(null)}
-            >
-              <a
-                href={arLink.href}
-                {...(arLink.android ? { target: '_blank', rel: 'noopener' } : { rel: 'ar' })}
-                onClick={(e) => e.stopPropagation()}
-                className="flex flex-col items-center justify-center gap-2 rounded-xl px-8 py-4"
-                style={{
-                  backgroundColor: THEME.accentNavy,
-                  color: THEME.textInverse,
-                  textDecoration: 'none',
-                  fontFamily: "'Source Sans 3', sans-serif",
-                }}
-              >
-                {!arLink.android && (
-                  <img
-                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-                    alt=""
-                    width={1}
-                    height={1}
-                    style={{ position: 'absolute', opacity: 0 }}
-                  />
-                )}
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-                <span style={{ fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 700, textTransform: 'uppercase' }}>
-                  Apri in AR
-                </span>
-                <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>
-                  {arLink.android ? 'Tocca per aprire Scene Viewer' : 'Tocca per aprire AR Quick Look'}
-                </span>
-              </a>
-            </div>
-          )}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+            <span style={{ fontSize: '0.5rem', letterSpacing: '0.15em', fontFamily: "'Source Sans 3', sans-serif", fontWeight: 700 }}>
+              AR
+            </span>
+          </a>
         </section>
 
         {/* Desktop sidebar — has max-lg:hidden built in */}

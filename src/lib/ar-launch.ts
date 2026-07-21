@@ -1,25 +1,12 @@
-// Client-side helpers for handing the *configured* model to native AR viewers.
-//
-// Both Google Scene Viewer (Android) and Apple AR Quick Look (iOS) fetch the
-// model from a plain HTTPS URL — they cannot use blob: URLs (and Quick Look
-// on recent iOS versions silently fails with them). So the configured model
-// is exported in-browser, uploaded to /api/ar-model, and the viewer is
-// pointed at the returned same-origin URL.
-
-export type ArModelKind = 'glb' | 'usdz'
-
-export async function uploadArModel(blob: Blob, kind: ArModelKind): Promise<string> {
-  const res = await fetch(`/api/ar-model?kind=${kind}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/octet-stream' },
-    body: blob,
-  })
-  if (!res.ok) throw new Error(`AR model upload failed (${res.status})`)
-  const { url } = (await res.json()) as { url: string }
-  // Resolve against the browser's own origin — the server sits behind a
-  // reverse proxy and can misreport its scheme/host in absolute URLs.
-  return new URL(url, window.location.origin).toString()
-}
+// Client-side helper for handing a static, pre-exported model to Google
+// Scene Viewer (Android). Both Scene Viewer and Apple AR Quick Look (iOS)
+// fetch the model from a plain HTTPS URL — they cannot use blob: URLs (and
+// Quick Look on recent iOS silently fails with them) — so AR variants are
+// pre-exported per product/material into public/models/{glb,usdz}/ (see
+// DevExportPanel's batch export + /api/dev-export) rather than built at
+// request time: the app is deployed on Vercel, whose serverless functions
+// cap request bodies at 4.5 MB (an exported GLB runs ~20+ MB) and have no
+// shared filesystem across invocations, so runtime export+upload can't work.
 
 // Build the Google Scene Viewer intent URL for a publicly fetchable GLB.
 //
