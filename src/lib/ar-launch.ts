@@ -16,25 +16,34 @@ export async function uploadArModel(blob: Blob, kind: ArModelKind): Promise<stri
   })
   if (!res.ok) throw new Error(`AR model upload failed (${res.status})`)
   const { url } = (await res.json()) as { url: string }
-  return url
+  // Resolve against the browser's own origin — the server sits behind a
+  // reverse proxy and can misreport its scheme/host in absolute URLs.
+  return new URL(url, window.location.origin).toString()
 }
 
-// Launch Google Scene Viewer with a publicly fetchable GLB URL.
+// Build the Google Scene Viewer intent URL for a publicly fetchable GLB.
+//
+// Returned as a string (not navigated here) because Chrome blocks intent://
+// for subframe navigations — this app runs inside a WordPress iframe — and
+// user activation expires during the export/upload await. The caller must put
+// it on an <a target="_blank"> the user taps: fresh gesture + top-level
+// navigation, both required for the intent to resolve.
 //
 // Uses package=com.google.android.googlequicksearchbox (the Google app) rather
 // than com.google.ar.core — the Google app is pre-installed on virtually all
 // Android devices and bundles Scene Viewer, so the intent resolves even on
 // devices without ARCore installed. com.google.ar.core silently fails on
 // those devices (the fallback URL fires but the user sees nothing happen).
-export function launchSceneViewer(glbUrl: string, title: string, fallbackUrl: string): void {
+export function sceneViewerIntentUrl(glbUrl: string, title: string, fallbackUrl: string): string {
   const params =
     `file=${encodeURIComponent(glbUrl)}` +
     `&title=${encodeURIComponent(title)}` +
     `&mode=ar_preferred` +
     `&enable_vertical_placement=false`
   const fallback = encodeURIComponent(fallbackUrl)
-  window.location.href =
+  return (
     `intent://arvr.google.com/scene-viewer/1.0?${params}` +
     `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;` +
     `S.browser_fallback_url=${fallback};end`
+  )
 }

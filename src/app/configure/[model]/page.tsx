@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation'
 import { useConfiguratorStore } from '@/stores/configurator-store'
 import { getUsdzExporter, onUsdzExporterReady } from '@/lib/usdz-export-ref'
 import { getGlbExporter, onGlbExporterReady } from '@/lib/glb-export-ref'
-import { launchSceneViewer, uploadArModel } from '@/lib/ar-launch'
+import { sceneViewerIntentUrl, uploadArModel } from '@/lib/ar-launch'
 import ConfigSidebar from '@/components/configurator/ConfigSidebar'
 import BottomSheet from '@/components/configurator/BottomSheet'
 import { MODELS } from '@/models'
@@ -124,7 +124,11 @@ export default function ConfiguratorPage({
   const setInteracting = useConfiguratorStore(s => s.setInteracting)
   const [sheetExpanded, setSheetExpanded] = useState(true)
   const [arLoading, setArLoading] = useState(false)
-  const [iosArUrl, setIosArUrl] = useState<string | null>(null)
+  // Prepared AR link shown in the two-tap overlay. Two-tap is mandatory on
+  // both platforms: user activation expires during the export/upload await,
+  // so a programmatic launch afterwards is blocked (popup blocker / intent
+  // navigation refused). android=true → Scene Viewer intent anchor.
+  const [arLink, setArLink] = useState<{ href: string; android: boolean } | null>(null)
   const [sceneReady, setSceneReady] = useState(false)
   const upholsteryId = useConfiguratorStore(s => s.upholsteryId)
   const exportCancelRef = useRef(false)
@@ -139,10 +143,10 @@ export default function ConfiguratorPage({
     return () => { offGlb(); offUsdz() }
   }, [])
 
-  // Reset iOS AR link whenever material changes — next tap re-exports with new material.
+  // Reset AR link whenever material changes — next tap re-exports with new material.
   useEffect(() => {
     exportCancelRef.current = true
-    setIosArUrl(null)
+    setArLink(null)
   }, [upholsteryId])
 
   if (!modelConfig?.glbPath) notFound()
@@ -155,30 +159,7 @@ export default function ConfiguratorPage({
   const handleAR = async () => {
     const isAndroid = /android/i.test(navigator.userAgent)
 
-    if (isAndroid) {
-      const exportFn = getGlbExporter()
-      if (!exportFn) {
-        alert('Scena 3D non ancora pronta. Riprova tra un momento.')
-        return
-      }
-      setArLoading(true)
-      try {
-        const blob = await exportFn()
-        const glbUrl = await uploadArModel(blob, 'glb')
-        launchSceneViewer(glbUrl, modelConfig!.name ?? '', window.location.href)
-      } catch (err) {
-        console.error('[AR] GLB export/upload failed:', err)
-        alert('Errore nella preparazione dell\'AR.')
-      } finally {
-        setArLoading(false)
-      }
-      return
-    }
-
-    // iOS: export USDZ with configured material, upload, then show AR Quick
-    // Look link. Two-step (export → user taps link) is required because iOS
-    // Safari blocks programmatic <a>.click() after async/await.
-    const exportFn = getUsdzExporter()
+    const exportFn = isAndroid ? getGlbExporter() : getUsdzExporter()
     if (!exportFn) {
       alert('Scena 3D non ancora pronta. Riprova tra un momento.')
       return
@@ -188,12 +169,16 @@ export default function ConfiguratorPage({
     setArLoading(true)
     try {
       const blob = await exportFn()
-      const url = await uploadArModel(blob, 'usdz')
+      const url = await uploadArModel(blob, isAndroid ? 'glb' : 'usdz')
       if (exportCancelRef.current) return // material changed mid-export, discard
-      setIosArUrl(url)
+      setArLink(
+        isAndroid
+          ? { href: sceneViewerIntentUrl(url, modelConfig!.name ?? '', window.location.href), android: true }
+          : { href: url, android: false }
+      )
     } catch (err) {
       if (!exportCancelRef.current) {
-        console.error('[AR] USDZ export failed:', err)
+        console.error('[AR] export/upload failed:', err)
         alert('Errore nella preparazione dell\'AR.')
       }
     } finally {
@@ -300,16 +285,21 @@ export default function ConfiguratorPage({
             )}
           </button>
 
-          {/* iOS AR Quick Look overlay — shown after USDZ export completes */}
-          {iosArUrl && (
+          {/* AR overlay — shown after export/upload completes. Second tap is
+              what actually launches the viewer (fresh user gesture required).
+              Android: target="_blank" gives the intent:// URL a top-level
+              navigation — Chrome refuses intent navigations inside iframes.
+              iOS: rel="ar" needs an <img> as first child or Safari won't
+              treat the anchor as a Quick Look launcher. */}
+          {arLink && (
             <div
               className="lg:hidden absolute inset-0 z-30 flex items-end justify-center pb-8"
               style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-              onClick={() => setIosArUrl(null)}
+              onClick={() => setArLink(null)}
             >
               <a
-                href={iosArUrl}
-                rel="ar"
+                href={arLink.href}
+                {...(arLink.android ? { target: '_blank', rel: 'noopener' } : { rel: 'ar' })}
                 onClick={(e) => e.stopPropagation()}
                 className="flex flex-col items-center justify-center gap-2 rounded-xl px-8 py-4"
                 style={{
@@ -319,6 +309,15 @@ export default function ConfiguratorPage({
                   fontFamily: "'Source Sans 3', sans-serif",
                 }}
               >
+                {!arLink.android && (
+                  <img
+                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                    alt=""
+                    width={1}
+                    height={1}
+                    style={{ position: 'absolute', opacity: 0 }}
+                  />
+                )}
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M12 2L2 7l10 5 10-5-10-5z" />
                   <path d="M2 17l10 5 10-5" />
@@ -328,7 +327,7 @@ export default function ConfiguratorPage({
                   Apri in AR
                 </span>
                 <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>
-                  Tocca per aprire AR Quick Look
+                  {arLink.android ? 'Tocca per aprire Scene Viewer' : 'Tocca per aprire AR Quick Look'}
                 </span>
               </a>
             </div>

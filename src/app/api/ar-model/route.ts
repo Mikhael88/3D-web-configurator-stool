@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AR_MODEL_CONTENT_TYPE, readArModel, saveArModel, type ArModelKind } from '@/lib/ar-model-store'
+import { saveArModel, type ArModelKind } from '@/lib/ar-model-store'
 
 export const runtime = 'nodejs'
 
@@ -13,7 +13,9 @@ function kindFromRequest(req: NextRequest): ArModelKind | null {
 }
 
 // POST /api/ar-model?kind=glb|usdz — body is the raw model file.
-// Returns { url } — a same-origin absolute URL the AR viewers can fetch.
+// Returns { url } — a same-origin relative URL; the client resolves it against
+// window.location.origin (the server is behind a proxy and can't know the
+// public scheme/host reliably).
 export async function POST(req: NextRequest) {
   const kind = kindFromRequest(req)
   if (!kind) {
@@ -32,5 +34,5 @@ export async function POST(req: NextRequest) {
   }
 
   const id = await saveArModel(data, kind)
-  return NextResponse.json({ url: `${req.nextUrl.origin}/api/ar-model/${id}?kind=${kind}` })
+  return NextResponse.json({ url: `/api/ar-model/${id}?kind=${kind}` })
 }
