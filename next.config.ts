@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   allowedDevOrigins: ['*'],
+  // Dev-only debug route reads an arbitrary GLB via dynamic fs path, which
+  // Vercel's build tracer can't resolve statically — it fell back to bundling
+  // the entire public/ dir (~400MB) into this one function, blowing the
+  // 250MB function size cap. It only runs locally (see route.ts NODE_ENV
+  // guard), so exclude public/ from its deploy bundle entirely.
+  outputFileTracingExcludes: {
+    '/api/glb-info': ['./public/**'],
+  },
   async headers() {
     return [
       {

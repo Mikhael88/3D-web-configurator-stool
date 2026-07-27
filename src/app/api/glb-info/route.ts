@@ -5,6 +5,10 @@ import path from 'path'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'dev only' }, { status: 403 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const file = searchParams.get('file') ?? 'stool.glb'
